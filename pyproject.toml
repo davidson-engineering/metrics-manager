@@ -1,6 +1,6 @@
 [project]
-name = "project_or_module_name"
-description = "A_short_description"
+name = "metrics-agent"
+description = "An agent to send metrics from a script to a database"
 
 # If a project, then you can specify version here
 # version = "0.0.0"
@@ -31,7 +31,7 @@ classifiers = [
 
 # If a module, then use fetch version from src/module_name/__init__.py
 [tool.setuptools.dynamic]
-version = {attr = "module0.__version__"}
+version = {attr = "metrics_agent.__version__"}
 
 [project.optional-dependencies]
 test = [
