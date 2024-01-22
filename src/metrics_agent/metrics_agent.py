@@ -8,26 +8,22 @@
 """a_short_module_description"""
 # ---------------------------------------------------------------------------
 
-from dataclasses import dataclass
 import time
 import threading
-from datetime import datetime, timezone
+import random
 
-import aggregator as ma
-import transmitter as mt
-import metrics_buffer as mb
-
+from aggregator import MetricsAggregatorStats
+from metrics_buffer import MetricsBuffer
 
 
-        
 class MetricsAgent:
-    def __init__(self, interval=10, transmitter=None, aggregator=None):
-        self.metrics_buffer = mb.MetricsBuffer()
+    def __init__(self, interval=10, client=None, aggregator=None):
+        self.metrics_buffer = MetricsBuffer()
         self.interval = interval
         self.last_sent_time = time.time()
         self.lock = threading.Lock()  # To ensure thread safety
-        self.transmitter = transmitter
-        self.aggregator = aggregator or ma.AverageMetricsAggregator()
+        self.client = client
+        self.aggregator = aggregator or MetricsAggregatorStats()
 
     def add_metric(self, name, value):
         with self.lock:
@@ -36,18 +32,12 @@ class MetricsAgent:
     def aggregate_and_send(self):
         with self.lock:
             if time.time() - self.last_sent_time >= self.interval:
-                if self.metrics_buffer.isnotempty():
-                    # Perform aggregation (e.g., averaging for simplicity)
-                    aggregated_metrics = self.aggregator(self.metrics_buffer.get_sorted_metrics())
-
-                    # Save to database (replace this with your database operation)
-                    self.transmitter.transmit(aggregated_metrics)
-
-                    # Reset metrics list and update last sent time
-                    self.metrics_buffer.clear_buffer()
-
+                if self.metrics_buffer.not_empty():
+                    # dump buffer to list of metrics
+                    metrics = self.metrics_buffer.dump_buffer()
                     self.last_sent_time = time.time()
-    
+                    aggregated_metrics = self.aggregator.aggregate(metrics)
+                    self.client.send(aggregated_metrics)
 
     def start_aggregator_thread(self):
         aggregator_thread = threading.Thread(target=self.run_aggregator, daemon=True)
@@ -60,37 +50,40 @@ class MetricsAgent:
 
 
 def main():
+    from database_client import InfluxDBClient
 
-    from transmitter import InfluxDBMetricsTransmitter
-    client = InfluxDBMetricsTransmitter("config/config.toml")
+    client = InfluxDBClient("config/config.toml", local_tz="America/Vancouver")
 
     # Example usage
-    metrics_agent = MetricsAgent(interval=3, transmitter=client)
+    metrics_agent = MetricsAgent(
+        interval=2, client=client, aggregator=MetricsAggregatorStats()
+    )
 
     # Start the aggregator thread
     metrics_agent.start_aggregator_thread()
 
-    for i in range(2):
-    # Simulating metric collection
-        for i in range(10):
-            metric_value = i * 2
+    while True:
+        n = 1000
+        val_max = 1000
+        # Simulating metric collection
+        for i in range(n):
+            metric_value = random.randint(1, val_max)
             metrics_agent.add_metric(name="random data", value=metric_value)
 
-        for i in range(10):
-            metric_value = i * 2
+        for i in range(n):
+            metric_value = random.randint(1, val_max)
             metrics_agent.add_metric(name="random data2", value=metric_value)
 
-    # Ensure any remaining metrics are sent
-    metrics_agent.aggregate_and_send()
+        # Simulating metric collection
+        for i in range(n):
+            metric_value = random.randint(1, val_max)
+            metrics_agent.add_metric(name="random data3", value=metric_value)
 
-    time.sleep(3)  # Wait for the aggregator thread to finish
+        for i in range(n):
+            metric_value = random.randint(1, val_max)
+            metrics_agent.add_metric(name="random data4", value=metric_value)
 
-
-
-    metrics_agent.aggregate_and_send()
-    
-    time.sleep(3)  # Wait for the aggregator thread to finish
-
+    # metrics_agent.aggregate_and_send()
 
 
 if __name__ == "__main__":

@@ -1,8 +1,12 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
+
 
 @dataclass
 class Metric:
-    metric_name: str
+    name: str
     value: float
-    timestamp: datetime
+    time: datetime
+
+    def __iter__(self):
+        yield from asdict(self).values()
