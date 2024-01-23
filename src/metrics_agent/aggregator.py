@@ -4,7 +4,7 @@ from dataclasses import dataclass, asdict, field
 from datetime import datetime
 
 import pandas as pd
-from metrics_metric import Metric
+from src.metrics_agent.metrics_metric import Metric
 
 
 @dataclass

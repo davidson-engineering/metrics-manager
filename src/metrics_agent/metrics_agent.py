@@ -12,8 +12,8 @@ import time
 import threading
 import random
 
-from aggregator import MetricsAggregatorStats
-from metrics_buffer import MetricsBuffer
+from src.metrics_agent.aggregator import MetricsAggregatorStats
+from src.metrics_agent.metrics_buffer import MetricsBuffer
 
 
 class MetricsAgent:

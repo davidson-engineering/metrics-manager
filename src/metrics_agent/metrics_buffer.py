@@ -1,7 +1,7 @@
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 
-from metrics_metric import Metric
+from src.metrics_agent.metrics_metric import Metric
 
 
 class MetricsBuffer:
@@ -9,7 +9,7 @@ class MetricsBuffer:
         self.buffer = deque()
 
     def add_metric(self, name, value):
-        timestamp = datetime.now()
+        timestamp = datetime.now(timezone.utc)
         metric = Metric(name, value, timestamp)
         self.buffer.append(metric)
 

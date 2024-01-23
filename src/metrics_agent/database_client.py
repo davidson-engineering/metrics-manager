@@ -20,9 +20,13 @@ class InfluxDBClient(DatabaseClient):
         self.local_tz = local_tz
 
     def convert(self, metric):
+        try:
+            time = metric.time.tz_localize(self.local_tz)
+        except TypeError:
+            time = metric.time
         return InfluxMetric(
             measurement=metric.name,
-            time=metric.time.tz_localize(self.local_tz),
+            time=time,
             fields=metric.value,
         )
 
