@@ -23,7 +23,10 @@ def metrics_agent():
             config="test/influxdb_testing_config.toml", local_tz="America/Vancouver"
         )
         metrics_agent = MetricsAgent(
-            interval=interval, client=client, aggregator=MetricsAggregatorStats()
+            interval=interval,
+            client=client,
+            aggregator=MetricsAggregatorStats(),
+            autostart=False,
         )
         return metrics_agent
 
@@ -138,7 +141,7 @@ def test_random_dataset_3_chunked(random_dataset_3_chunked):
 
 def test_client(metrics_agent):
     agent = metrics_agent()
-    assert agent.client._client.ping() == True
+    assert agent.client._client.ping() is True
 
 
 def run_aggregator_test(agent, dataset):
