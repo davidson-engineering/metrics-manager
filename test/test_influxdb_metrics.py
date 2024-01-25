@@ -136,6 +136,11 @@ def test_random_dataset_3_chunked(random_dataset_3_chunked):
     assert random_dataset_3_chunked[0][0]["value"] > 0
 
 
+def test_client(metrics_agent):
+    agent = metrics_agent()
+    assert agent.client._client.ping() == True
+
+
 def run_aggregator_test(agent, dataset):
     from metrics_agent.aggregator import MetricsAggregatorStats
     import time
