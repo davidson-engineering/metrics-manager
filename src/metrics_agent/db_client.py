@@ -14,8 +14,10 @@ class DatabaseClient(ABC):
 
 
 class InfluxDatabaseClient(DatabaseClient):
-    def __init__(self, config, local_tz="UTC"):
-        self._client = FastInfluxDBClient.from_config_file(config, write_precision="MS")
+    def __init__(self, config, local_tz="UTC", write_precision="S"):
+        self._client = FastInfluxDBClient.from_config_file(
+            config, write_precision=write_precision
+        )
         self._client.default_bucket = "testing"
         self.local_tz = local_tz
 
