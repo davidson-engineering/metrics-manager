@@ -137,7 +137,7 @@ def test_random_dataset_3_chunked(random_dataset_3_chunked):
 
 
 def run_aggregator_test(agent, dataset):
-    from src.metrics_agent.aggregator import MetricsAggregatorStats
+    from metrics_agent.aggregator import MetricsAggregatorStats
     import time
 
     random_dataset_1_stats = []
