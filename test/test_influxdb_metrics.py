@@ -157,9 +157,7 @@ def run_aggregator_test(agent, dataset):
         time.sleep(interval * 1.1)
 
     # ensure the buffer is empty before continuing
-    while agent.metrics_buffer.not_empty():
-        agent.aggregate_and_send()
-        time.sleep(interval)
+    agent.run_until_buffer_empty()
 
     time_stop = (datetime.now(timezone.utc) + timedelta(seconds=10)).strftime(
         "%Y-%m-%dT%H:%M:%SZ"
@@ -172,7 +170,7 @@ def run_aggregator_test(agent, dataset):
         '|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
     )
 
-    df = agent.client.client.query_api().query_data_frame(query)
+    df = agent.client._client.query_api().query_data_frame(query)
 
     # compare the stats from the database to the stats calculated in the controlled environment
     for _, index in df.iterrows():
