@@ -25,7 +25,7 @@ jobs:
     - name: Setup docker compose
       uses: yu-ichiro/spin-up-docker-compose-action@v1
       with:
-          file: influx-test-compose.yaml
+          file: test/influx-testing-compose.yaml
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:

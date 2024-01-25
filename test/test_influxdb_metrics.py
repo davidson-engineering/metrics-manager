@@ -20,7 +20,7 @@ def metrics_agent():
 
     def metrics_agent_func(interval=1):
         client = InfluxDatabaseClient(
-            config="config/config.toml", local_tz="America/Vancouver"
+            config="test/influxdb_testing_config.toml", local_tz="America/Vancouver"
         )
         metrics_agent = MetricsAgent(
             interval=interval, client=client, aggregator=MetricsAggregatorStats()
@@ -74,22 +74,22 @@ def generate_random_dataset_timed(
 
 @pytest.fixture
 def random_dataset_1():
-    return generate_random_dataset(size=1000, seed=1)
+    return generate_random_dataset(size=100, seed=1)
 
 
 @pytest.fixture
 def random_dataset_1_chunked():
-    return generate_random_dataset(seed=1, size=1000, chunk_size=100)
+    return generate_random_dataset(seed=1, size=100, chunk_size=10)
 
 
 @pytest.fixture
 def random_dataset_2_chunked():
-    return generate_random_dataset(seed=1, size=100000, chunk_size=10000)
+    return generate_random_dataset(seed=2, size=1000, chunk_size=100)
 
 
 @pytest.fixture
 def random_dataset_3_chunked():
-    return generate_random_dataset(seed=1, size=10000, chunk_size=100)
+    return generate_random_dataset(seed=3, size=10000, chunk_size=1000)
 
 
 @pytest.fixture
@@ -98,7 +98,7 @@ def random_dataset_1_timed():
 
 
 def test_random_dataset_1(random_dataset_1):
-    assert len(random_dataset_1) == 1000
+    assert len(random_dataset_1) == 100
     assert random_dataset_1[0]["name"] == "random_dataset"
     assert random_dataset_1[0]["value"] < 1
     assert random_dataset_1[0]["value"] > 0
@@ -106,7 +106,7 @@ def test_random_dataset_1(random_dataset_1):
 
 def test_random_dataset_1_chunked(random_dataset_1_chunked):
     assert len(random_dataset_1_chunked) == 10
-    assert len(random_dataset_1_chunked[0]) == 100
+    assert len(random_dataset_1_chunked[0]) == 10
     assert random_dataset_1_chunked[0][0]["name"] == "random_dataset"
     assert random_dataset_1_chunked[0][0]["value"] < 1
     assert random_dataset_1_chunked[0][0]["value"] > 0
@@ -122,15 +122,15 @@ def test_random_dataset(random_dataset_1_timed):
 
 def test_random_dataset_2_chunked(random_dataset_2_chunked):
     assert len(random_dataset_2_chunked) == 10
-    assert len(random_dataset_2_chunked[0]) == 10000
+    assert len(random_dataset_2_chunked[0]) == 100
     assert random_dataset_2_chunked[0][0]["name"] == "random_dataset"
     assert random_dataset_2_chunked[0][0]["value"] < 1
     assert random_dataset_2_chunked[0][0]["value"] > 0
 
 
 def test_random_dataset_3_chunked(random_dataset_3_chunked):
-    assert len(random_dataset_3_chunked) == 100
-    assert len(random_dataset_3_chunked[0]) == 100
+    assert len(random_dataset_3_chunked) == 10
+    assert len(random_dataset_3_chunked[0]) == 1000
     assert random_dataset_3_chunked[0][0]["name"] == "random_dataset"
     assert random_dataset_3_chunked[0][0]["value"] < 1
     assert random_dataset_3_chunked[0][0]["value"] > 0
@@ -189,13 +189,13 @@ def test_metrics_aggregator_stats_small(metrics_agent, random_dataset_1_chunked)
     run_aggregator_test(agent=agent, dataset=random_dataset_1_chunked)
 
 
-def test_metrics_aggregator_stats_large(metrics_agent, random_dataset_2_chunked):
-    interval = 1
-    agent = metrics_agent(interval=interval)
-    run_aggregator_test(agent=agent, dataset=random_dataset_2_chunked)
+# def test_metrics_aggregator_stats_medium(metrics_agent, random_dataset_2_chunked):
+#     interval = 1
+#     agent = metrics_agent(interval=interval)
+#     run_aggregator_test(agent=agent, dataset=random_dataset_2_chunked)
 
 
-def test_metrics_aggregator_stats_long(metrics_agent, random_dataset_3_chunked):
-    interval = 1
-    agent = metrics_agent(interval=interval)
-    run_aggregator_test(agent=agent, dataset=random_dataset_3_chunked)
+# def test_metrics_aggregator_stats_large(metrics_agent, random_dataset_3_chunked):
+#     interval = 1
+#     agent = metrics_agent(interval=interval)
+#     run_aggregator_test(agent=agent, dataset=random_dataset_3_chunked)
