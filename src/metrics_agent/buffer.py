@@ -1,7 +1,7 @@
 from collections import deque
 from datetime import datetime, timezone
 
-from src.metrics_agent.metrics_metric import Metric
+from metrics_agent.metric import Metric
 
 
 class MetricsBuffer:

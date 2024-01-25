@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from itertools import islice
 
-from src.metrics_agent.metrics_metric import Metric
+from metrics_agent.metric import Metric
 
 
 def chunk(it, size):
@@ -14,12 +14,14 @@ def chunk(it, size):
 
 @pytest.fixture
 def metrics_agent():
-    from src.metrics_agent.metrics_agent import MetricsAgent
-    from src.metrics_agent.database_client import InfluxDBClient
+    from metrics_agent.agent import MetricsAgent
+    from metrics_agent.db_client import InfluxDatabaseClient
     from src.metrics_agent.aggregator import MetricsAggregatorStats
 
     def metrics_agent_func(interval=1):
-        client = InfluxDBClient("config/config.toml", local_tz="America/Vancouver")
+        client = InfluxDatabaseClient(
+            "config/config.toml", local_tz="America/Vancouver"
+        )
         metrics_agent = MetricsAgent(
             interval=interval, client=client, aggregator=MetricsAggregatorStats()
         )

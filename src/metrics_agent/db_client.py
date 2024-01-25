@@ -13,10 +13,10 @@ class DatabaseClient(ABC):
         ...
 
 
-class InfluxDBClient(DatabaseClient):
+class InfluxDatabaseClient(DatabaseClient):
     def __init__(self, config, local_tz="UTC"):
-        self.client = FastInfluxDBClient.from_config_file(config)
-        self.client.default_bucket = "testing"
+        self._client = FastInfluxDBClient.from_config_file(config)
+        self._client.default_bucket = "testing"
         self.local_tz = local_tz
 
     def convert(self, metric):
@@ -33,4 +33,4 @@ class InfluxDBClient(DatabaseClient):
     def send(self, metrics):
         for metric in metrics:
             metric = self.convert(metric)
-            self.client.write_metric(metric)
+            self._client.write_metric(metric)
