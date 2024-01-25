@@ -25,7 +25,7 @@ classifiers = [
 
 dependencies = [
    "pandas==2.2.0",
-   "fast-influxdb-client @ git+https://github.com/davidson-engineering/fast-influxdb-client.git@v1.0.5",""
+   "fast-influxdb-client @ git+https://github.com/davidson-engineering/fast-influxdb-client.git@v1.0.5"
 ]
 
 # If a module, then use fetch version from src/module_name/__init__.py
