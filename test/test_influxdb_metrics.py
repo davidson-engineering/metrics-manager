@@ -16,11 +16,11 @@ def chunk(it, size):
 def metrics_agent():
     from metrics_agent.agent import MetricsAgent
     from metrics_agent.db_client import InfluxDatabaseClient
-    from src.metrics_agent.aggregator import MetricsAggregatorStats
+    from metrics_agent.aggregator import MetricsAggregatorStats
 
     def metrics_agent_func(interval=1):
         client = InfluxDatabaseClient(
-            "config/config.toml", local_tz="America/Vancouver"
+            config="config/config.toml", local_tz="America/Vancouver"
         )
         metrics_agent = MetricsAgent(
             interval=interval, client=client, aggregator=MetricsAggregatorStats()
