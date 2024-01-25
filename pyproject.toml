@@ -1,10 +1,6 @@
 [project]
 name = "metrics-agent"
 description = "An agent to send metrics from a script to a database"
-
-# If a project, then you can specify version here
-# version = "0.0.0"
-# If a module, then fetch version dynamically (see [tool.setuptools.dynamic] below)
 dynamic = ["version"]
 
 readme = "README.md"
@@ -18,16 +14,19 @@ authors = [
 classifiers = [
     "Development Status :: 1 - Planning",
     "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 
-# dependencies = [
-#    "numpy",
-#    "my_module @ git+https://github.com/my_github/my_repo.git@tag", 
-# ]
+dependencies = [
+   "pandas==2.2.0",
+   "fast-influxdb-client @ git+https://github.com/davidson-engineering/fast-influxdb-client.git@v1.0.5",""
+]
 
 # If a module, then use fetch version from src/module_name/__init__.py
 [tool.setuptools.dynamic]
@@ -35,20 +34,12 @@ version = {attr = "metrics_agent.__version__"}
 
 [project.optional-dependencies]
 test = [
-  "pytest >= 7.1.1",
+  "pytest >= 7.4.4",
 ]
 
-# [project.urls]
-# homepage = "https://example.com"
+[project.urls]
+homepage = "https://davidson.engineering"
 # documentation = "https://readthedocs.org"
 # repository = "https://github.com"
 # changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 
-# [project.scripts]
-# spam-cli = "spam:main_cli"
-
-# [project.gui-scripts]
-# spam-gui = "spam:main_gui"
-
-# [project.entry-points."spam.magical"]
-# tomatoes = "spam:main_tomatoes"
