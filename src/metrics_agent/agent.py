@@ -88,7 +88,7 @@ def main():
 
     # Example usage
     metrics_agent = MetricsAgent(
-        interval=2, client=client, aggregator=MetricsAggregatorStats()
+        interval=1, client=client, aggregator=MetricsAggregatorStats()
     )
 
     n = 1000000
