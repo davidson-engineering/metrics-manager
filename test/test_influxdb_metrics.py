@@ -165,7 +165,8 @@ def run_aggregator_test(agent, dataset):
         time.sleep(interval * 1.1)
 
     # ensure the buffer is empty before continuing
-    agent.run_until_buffer_empty()
+    # agent.run_until_buffer_empty()
+    time.sleep(interval * 2)
 
     time_stop = (datetime.now(timezone.utc) + timedelta(seconds=10)).strftime(
         "%Y-%m-%dT%H:%M:%SZ"
@@ -191,10 +192,10 @@ def run_aggregator_test(agent, dataset):
         assert metric.value["sum"] == pytest.approx(index["sum"])
 
 
-# def test_metrics_aggregator_stats_small(metrics_agent, random_dataset_1_chunked):
-#     interval = 1
-#     agent = metrics_agent(interval=interval)
-#     run_aggregator_test(agent=agent, dataset=random_dataset_1_chunked)
+def test_metrics_aggregator_stats_small(metrics_agent, random_dataset_1_chunked):
+    interval = 1
+    agent = metrics_agent(interval=interval)
+    run_aggregator_test(agent=agent, dataset=random_dataset_1_chunked)
 
 
 # def test_metrics_aggregator_stats_medium(metrics_agent, random_dataset_2_chunked):
