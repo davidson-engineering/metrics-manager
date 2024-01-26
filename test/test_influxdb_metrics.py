@@ -198,10 +198,10 @@ def test_metrics_aggregator_stats_small(metrics_agent, random_dataset_1_chunked)
     run_aggregator_test(agent=agent, dataset=random_dataset_1_chunked)
 
 
-# def test_metrics_aggregator_stats_medium(metrics_agent, random_dataset_2_chunked):
-#     interval = 1
-#     agent = metrics_agent(interval=interval)
-#     run_aggregator_test(agent=agent, dataset=random_dataset_2_chunked)
+def test_metrics_aggregator_stats_medium(metrics_agent, random_dataset_2_chunked):
+    interval = 1
+    agent = metrics_agent(interval=interval)
+    run_aggregator_test(agent=agent, dataset=random_dataset_2_chunked)
 
 
 # def test_metrics_aggregator_stats_large(metrics_agent, random_dataset_3_chunked):
