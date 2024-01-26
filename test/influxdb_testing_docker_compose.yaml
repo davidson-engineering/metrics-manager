@@ -1,7 +1,6 @@
 version: '3'
 services:
-    influxdb:
-        container_name: influxdb-test
+    influxdb-testing:
         image: influxdb:latest
         ports:
             - 8086:8086
