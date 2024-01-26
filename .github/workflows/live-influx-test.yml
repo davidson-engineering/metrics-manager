@@ -26,8 +26,6 @@ jobs:
       uses: yu-ichiro/spin-up-docker-compose-action@v1
       with:
           file: test/influxdb_testing_docker_compose.yaml
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
