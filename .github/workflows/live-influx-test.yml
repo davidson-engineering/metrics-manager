@@ -20,6 +20,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
+    # Setup service container for influxdb database.
+    # env variables set for minimal bootstrapped setup 
     services:
       influxdb-test:
         image: influxdb:latest
@@ -32,6 +34,7 @@ jobs:
           DOCKER_INFLUXDB_INIT_BUCKET: testing
           DOCKER_INFLUXDB_INIT_USERNAME: user
           DOCKER_INFLUXDB_INIT_PASSWORD: password
+
     steps:
     - name: Check out repository code
       uses: actions/checkout@v4

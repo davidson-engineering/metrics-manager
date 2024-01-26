@@ -166,7 +166,6 @@ def run_aggregator_test(agent, dataset):
 
     # ensure the buffer is empty before continuing
     agent.run_until_buffer_empty()
-    # time.sleep(interval * 2)
 
     time_stop = (datetime.now(timezone.utc) + timedelta(seconds=10)).strftime(
         "%Y-%m-%dT%H:%M:%SZ"
