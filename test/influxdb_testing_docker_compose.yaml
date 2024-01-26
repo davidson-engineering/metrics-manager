@@ -11,5 +11,5 @@ services:
           - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN = super_secret_token
           - DOCKER_INFLUXDB_INIT_ORG = my_org
           - DOCKER_INFLUXDB_INIT_BUCKET = testing
-          - DOCKER_INFLUXDB_INIT_USERNAME=user
-          - DOCKER_INFLUXDB_INIT_PASSWORD=password
+          - DOCKER_INFLUXDB_INIT_USERNAME = user
+          - DOCKER_INFLUXDB_INIT_PASSWORD = password

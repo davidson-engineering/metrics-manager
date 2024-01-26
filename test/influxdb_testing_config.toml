@@ -1,5 +1,5 @@
 [influx2]
-    url = "http://host.docker.internal:8086"
+    url = "http://localhost:8086"
     token = "super_secret_token"
     org = "my_org"
     timeout = 6000
