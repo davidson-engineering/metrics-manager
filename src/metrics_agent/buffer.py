@@ -4,14 +4,12 @@ from datetime import datetime, timezone
 from metrics_agent.metric import Metric
 
 
-class MetricsBuffer:
+class Buffer:
     def __init__(self):
         self.buffer = deque()
 
-    def add_metric(self, name, value):
-        timestamp = datetime.now(timezone.utc)
-        metric = Metric(name, value, timestamp)
-        self.buffer.append(metric)
+    def add(self, data):
+        self.buffer.append(data)
 
     def clear_buffer(self):
         self.buffer.clear()
@@ -29,3 +27,10 @@ class MetricsBuffer:
         buffer = self.get_buffer_copy()
         self.clear_buffer()
         return buffer
+
+
+class MetricsBuffer(Buffer):
+    def add_metric(self, name, value, timestamp=None):
+        timestamp = timestamp or datetime.now(timezone.utc)
+        metric = Metric(name, value, timestamp)
+        self.add(metric)

@@ -12,6 +12,7 @@ import threading
 
 from metrics_agent.aggregator import MetricsAggregatorStats
 from metrics_agent.buffer import MetricsBuffer
+from metrics_server import MetricsServer, MetricTCPHandler
 
 
 class MetricsAgent:
@@ -31,10 +32,31 @@ class MetricsAgent:
 
     """
 
-    def __init__(self, interval=10, client=None, aggregator=None, autostart=True):
+    def __init__(
+        self,
+        interval=10,
+        server=None,
+        client=None,
+        aggregator=None,
+        autostart=True,
+        port=9000,
+        host="localhost",
+    ):
         self._metrics_buffer = MetricsBuffer()
         self._last_sent_time = time.time()
         self._lock = threading.Lock()  # To ensure thread safety
+
+        if server is True:
+            self.server: MetricsServer = MetricsServer((host, port), MetricTCPHandler)
+            self.server_thread: threading.Thread = threading.Thread(
+                target=self.server.run
+            )
+            self.server_datafeed_thread: threading.Thread = threading.Thread(
+                target=self.feed_data_from_server
+            )
+            self.start_server()
+        else:
+            self.server = server
 
         self.interval = interval
         self.client = client
@@ -43,9 +65,9 @@ class MetricsAgent:
         if autostart:
             self.start_aggregator_thread()
 
-    def add_metric(self, name, value):
+    def add_metric(self, name, value, timestamp=None):
         with self._lock:
-            self._metrics_buffer.add_metric(name, value)
+            self._metrics_buffer.add_metric(name, value, timestamp)
 
     def aggregate_and_send(self):
         with self._lock:
@@ -80,11 +102,24 @@ class MetricsAgent:
         while self._metrics_buffer.not_empty():
             time.sleep(self.interval)
 
+    def start_server(self):
+        self.server_thread.start()
+        self.server_datafeed_thread.start()
+
+    def feed_data_from_server(self):
+        # Check that data from buffer is in correct format for add_metric
+        while True:
+            if self.server.buffer:
+                data = self.server.buffer.popleft()
+                data = data.decode()
+                data = data.split(",")
+                self.add_metric(*data)
+
 
 def main():
     from metrics_agent.db_client import InfluxDatabaseClient
 
-    client = InfluxDatabaseClient("config/config.toml", local_tz="America/Vancouver")
+    client = InfluxDatabaseClient("config/influx.toml", local_tz="America/Vancouver")
 
     # Example usage
     metrics_agent = MetricsAgent(
