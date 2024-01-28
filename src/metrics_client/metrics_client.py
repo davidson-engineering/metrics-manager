@@ -5,11 +5,14 @@ from typing import Union
 import socket
 import time
 import threading
+import logging
 
 try:
     import tomllib
 except ImportError:
     import tomli as tomllib
+
+logger = logging.getLogger(__name__)
 
 
 def load_config(config_path):
@@ -35,12 +38,14 @@ class MetricsClient:
                 timestamp = timestamp.timestamp()
             data = (name, value, timestamp)
             self.buffer.add(data)
+            logger.debug(f"Added data to client buffer: {name}={value}")
 
     def send(self):
         with self._lock:
             data = self.buffer.dump_buffer()
             for el in data:
                 datastring = ",".join(map(str, el))
+                logger.debug(f"Sending data: {datastring}")
                 self._socket.sendto(
                     datastring.encode(),
                     (self.config["host"], self.config["port"]),
@@ -53,10 +58,12 @@ class MetricsClient:
 
     def start(self):
         self.run_client_thread.start()
+        logger.debug("Started client thread")
 
     def __del__(self):
         # This method is called when the object is about to be destroyed
         self._socket.close()
+        logger.debug("Closed socket")
 
 
 def main():

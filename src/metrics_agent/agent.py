@@ -9,10 +9,13 @@
 
 import time
 import threading
+import logging
 
 from metrics_agent.aggregator import MetricsAggregatorStats
 from metrics_agent.buffer import MetricsBuffer
 from metrics_server import MetricsServer, MetricTCPHandler
+
+logger = logging.getLogger(__name__)
 
 
 class MetricsAgent:
@@ -64,10 +67,12 @@ class MetricsAgent:
 
         if autostart:
             self.start_aggregator_thread()
+            logger.info("Started aggregator thread")
 
     def add_metric(self, name, value, timestamp=None):
         with self._lock:
             self._metrics_buffer.add_metric(name, value, timestamp)
+            logger.debug(f"Added metric to buffer: {name}={value}")
 
     def aggregate_and_send(self):
         with self._lock:
@@ -82,6 +87,7 @@ class MetricsAgent:
     def start_aggregator_thread(self):
         aggregator_thread = threading.Thread(target=self.run_aggregator, daemon=True)
         aggregator_thread.start()
+        logger.debug("Started aggregator thread")
 
     def run_aggregator(self):
         while True:
@@ -90,6 +96,7 @@ class MetricsAgent:
 
     def stop_aggregator_thread(self):
         self.aggregator_thread.join()
+        logger.debug("Stopped aggregator thread")
 
     def clear_metrics_buffer(self):
         with self._lock:
@@ -101,16 +108,20 @@ class MetricsAgent:
     def run_until_buffer_empty(self):
         while self._metrics_buffer.not_empty():
             time.sleep(self.interval)
+        logger.debug("Buffer is empty")
 
     def start_server(self):
         self.server_thread.start()
+        logger.info("Started server thread")
         self.server_datafeed_thread.start()
+        logger.info("Started server datafeed thread")
 
     def feed_data_from_server(self):
         # Check that data from buffer is in correct format for add_metric
         while True:
             if self.server.buffer:
                 data = self.server.buffer.popleft()
+                logger.debug(f"Received data from server: {data}")
                 data = data.decode()
                 data = data.split(",")
                 self.add_metric(*data)

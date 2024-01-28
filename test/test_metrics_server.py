@@ -2,7 +2,7 @@ import pytest
 from metrics_client import MetricsClient
 import time
 from datetime import datetime, timedelta, timezone
-
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -14,7 +14,8 @@ def test_db_client(metrics_agent_server):
     assert agent.client._client.ping() is True
 
 
-def test_metrics_client(metrics_agent_server):
+def test_metrics_client(metrics_agent_server, caplog):
+    caplog.set_level(logging.DEBUG)
     agent: MetricsAgent = metrics_agent_server()
     agent.start_aggregator_thread()
 
