@@ -5,8 +5,8 @@ from metrics_agent.metric import Metric
 
 
 class Buffer:
-    def __init__(self):
-        self.buffer = deque()
+    def __init__(self, maxlen=1024):
+        self.buffer = deque(maxlen=maxlen)
 
     def add(self, data):
         self.buffer.append(data)

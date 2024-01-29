@@ -10,6 +10,7 @@
 import time
 import threading
 import logging
+from datetime import datetime
 
 from metrics_agent.aggregator import MetricsAggregatorStats
 from metrics_agent.buffer import MetricsBuffer
@@ -17,6 +18,8 @@ from metrics_server import MetricsServer, MetricTCPHandler
 
 logger = logging.getLogger(__name__)
 
+class DataFormatException(Exception):
+    pass
 
 class MetricsAgent:
     """
@@ -51,12 +54,20 @@ class MetricsAgent:
 
         if server is True:
             self.server: MetricsServer = MetricsServer((host, port), MetricTCPHandler)
-            self.server_thread: threading.Thread = threading.Thread(
-                target=self.server.run
+
+            server_thread: threading.Thread = threading.Thread(
+                target=self.server.start_server
             )
-            self.server_datafeed_thread: threading.Thread = threading.Thread(
+            server_thread.daemon = True
+
+            server_datafeed_thread: threading.Thread = threading.Thread(
                 target=self.feed_data_from_server
             )
+            server_datafeed_thread.daemon = True
+
+            self.server_thread = server_thread
+            self.server_datafeed_thread = server_datafeed_thread
+
             self.start_server()
         else:
             self.server = server
@@ -119,12 +130,30 @@ class MetricsAgent:
     def feed_data_from_server(self):
         # Check that data from buffer is in correct format for add_metric
         while True:
-            if self.server.buffer:
-                data = self.server.buffer.popleft()
+            logger.debug("Checking for data from server")
+            if buffered_data := self.server.fetch_buffer():
+                data = buffered_data.pop()
                 logger.debug(f"Received data from server: {data}")
-                data = data.decode()
-                data = data.split(",")
-                self.add_metric(*data)
+                #if string contains "\n" then split on "\n" and loop through each element
+                if "\n" in data:
+                    for data in data.split("\n"):
+                        if data:
+                            data = data.split(",")
+                            if len(data) != 3:
+                                raise DataFormatException("Data from server is not in correct format")
+                            name, value, timestamp = data
+                            self.add_metric(name=name, value=float(value), timestamp=datetime.fromtimestamp(float(timestamp)))
+                    continue
+            else:
+                logger.debug("No data from server, sleeping")
+                time.sleep(1)
+
+    def __del__(self):
+        # This method is called when the object is about to be destroyed
+        self.stop_aggregator_thread()
+        logger.debug("Stopped aggregator thread")
+        self.server.stop_server()
+        logger.debug("Stopped server thread")
 
 
 def main():

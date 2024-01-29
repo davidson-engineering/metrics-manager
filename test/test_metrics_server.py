@@ -19,17 +19,14 @@ def test_metrics_client(metrics_agent_server, caplog):
     agent: MetricsAgent = metrics_agent_server()
     agent.start_aggregator_thread()
 
-    server_config = {
-        "host": "localhost",
-        "port": 9000,
-    }
-
-    client = MetricsClient(server_config)
+    client = MetricsClient(host='localhost', port=9000)
     client.start()
 
     # Example: Add metrics to the buffer
     client.add_metric("cpu_usage", 80.0, time.time())
     client.add_metric("memory_usage", 60.0, time.time())
+
+    time.sleep(4)
 
     agent.run_until_buffer_empty()
 

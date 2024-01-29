@@ -1,1 +1,1 @@
-from metrics_client.metrics_client import MetricsClient
+from metrics_client.client import MetricsClient

@@ -7,24 +7,13 @@ import time
 import threading
 import logging
 
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
 
 logger = logging.getLogger(__name__)
 
-
-def load_config(config_path):
-    with open(config_path, "r") as f:
-        config = tomllib.load(f)
-    return config
-
-
 class MetricsClient:
-    def __init__(self, config: dict, autostart=False, update_interval=1):
-        self.config = config
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    def __init__(self, host, port, autostart=False, update_interval=1):
+        self.host = host
+        self.port = port
         self.buffer = Buffer()
         self._lock = threading.Lock()  # To ensure thread safety
         self.run_client_thread = threading.Thread(target=self.run_client, daemon=True)
@@ -43,13 +32,14 @@ class MetricsClient:
     def send(self):
         with self._lock:
             data = self.buffer.dump_buffer()
-            for el in data:
-                datastring = ",".join(map(str, el))
-                logger.debug(f"Sending data: {datastring}")
-                self._socket.sendto(
-                    datastring.encode(),
-                    (self.config["host"], self.config["port"]),
-                )
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((self.host, self.port))
+                for el in data:
+                    datastring = ",".join(map(str, el))
+                    logger.debug(f"Sending data: {datastring}")
+                    s.send(
+                        (datastring+"\n").encode('utf-8')
+                    )
 
     def run_client(self):
         while True:
