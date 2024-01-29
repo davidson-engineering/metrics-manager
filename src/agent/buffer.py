@@ -1,7 +1,7 @@
 from collections import deque
 from datetime import datetime, timezone
 
-from metrics_agent.metric import Metric
+from agent.metric import Metric
 
 
 class Buffer:
@@ -9,7 +9,10 @@ class Buffer:
         self.buffer = deque(maxlen=maxlen)
 
     def add(self, data):
-        self.buffer.append(data)
+        if isinstance(data[0], list):
+            self.buffer.extend(data)
+        else:
+            self.buffer.append(data)
 
     def clear_buffer(self):
         self.buffer.clear()

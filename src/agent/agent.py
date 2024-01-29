@@ -12,14 +12,16 @@ import threading
 import logging
 from datetime import datetime
 
-from metrics_agent.aggregator import MetricsAggregatorStats
-from metrics_agent.buffer import MetricsBuffer
-from metrics_server import MetricsServer, MetricTCPHandler
+from agent.aggregator import MetricsAggregatorStats
+from agent.buffer import MetricsBuffer
+from network_sync import MetricsServer, MetricTCPHandler
 
 logger = logging.getLogger(__name__)
 
+
 class DataFormatException(Exception):
     pass
+
 
 class MetricsAgent:
     """
@@ -131,19 +133,16 @@ class MetricsAgent:
         # Check that data from buffer is in correct format for add_metric
         while True:
             logger.debug("Checking for data from server")
-            if buffered_data := self.server.fetch_buffer():
-                data = buffered_data.pop()
-                logger.debug(f"Received data from server: {data}")
-                #if string contains "\n" then split on "\n" and loop through each element
-                if "\n" in data:
-                    for data in data.split("\n"):
-                        if data:
-                            data = data.split(",")
-                            if len(data) != 3:
-                                raise DataFormatException("Data from server is not in correct format")
-                            name, value, timestamp = data
-                            self.add_metric(name=name, value=float(value), timestamp=datetime.fromtimestamp(float(timestamp)))
-                    continue
+            if data_new := self.server.fetch_buffer():
+                for data in data_new:
+                    if not data[0]:
+                        continue
+                    name, value, timestamp = data
+                    self.add_metric(
+                        name=name,
+                        value=float(value),
+                        timestamp=datetime.fromtimestamp(float(timestamp)),
+                    )
             else:
                 logger.debug("No data from server, sleeping")
                 time.sleep(1)
@@ -157,7 +156,7 @@ class MetricsAgent:
 
 
 def main():
-    from metrics_agent.db_client import InfluxDatabaseClient
+    from agent.db_client import InfluxDatabaseClient
 
     client = InfluxDatabaseClient("config/influx.toml", local_tz="America/Vancouver")
 

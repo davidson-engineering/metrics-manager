@@ -3,14 +3,14 @@ import pytest
 from datetime import datetime, timedelta, timezone
 
 
-from metrics_agent import Metric
+from agent import Metric
 
 
 @pytest.fixture
 def metrics_agent():
-    from metrics_agent.agent import MetricsAgent
-    from metrics_agent.db_client import InfluxDatabaseClient
-    from metrics_agent.aggregator import MetricsAggregatorStats
+    from agent.agent import MetricsAgent
+    from agent.db_client import InfluxDatabaseClient
+    from agent.aggregator import MetricsAggregatorStats
 
     def metrics_agent_func(interval=1):
         client = InfluxDatabaseClient(
@@ -33,7 +33,7 @@ def test_db_client(metrics_agent):
 
 
 def run_aggregator_test(agent, dataset):
-    from metrics_agent.aggregator import MetricsAggregatorStats
+    from agent.aggregator import MetricsAggregatorStats
     import time
 
     random_dataset_1_stats = []
