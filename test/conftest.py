@@ -3,7 +3,7 @@ import random
 from datetime import datetime, timedelta
 from itertools import islice
 
-from agent.metric import Metric
+from metrics_agent.metric import Metric
 
 
 INFLUXDB_TESTING_CONFIG_FILEPATH = "test/influxdb_testing_config.toml"
@@ -84,9 +84,9 @@ def random_dataset_1_timed():
 
 @pytest.fixture
 def metrics_agent():
-    from agent import MetricsAgent
-    from agent.db_client import InfluxDatabaseClient
-    from agent.aggregator import MetricsAggregatorStats
+    from metrics_agent import MetricsAgent
+    from metrics_agent.db_client import InfluxDatabaseClient
+    from metrics_agent.aggregator import MetricsAggregatorStats
 
     def metrics_agent_func(interval=1):
         client = InfluxDatabaseClient(
@@ -105,9 +105,9 @@ def metrics_agent():
 
 @pytest.fixture
 def metrics_agent_server():
-    from agent.agent import MetricsAgent
-    from agent.db_client import InfluxDatabaseClient
-    from agent.aggregator import MetricsAggregatorStats
+    from metrics_agent.agent import MetricsAgent
+    from metrics_agent.db_client import InfluxDatabaseClient
+    from metrics_agent.aggregator import MetricsAggregatorStats
 
     def metrics_agent_func(interval=1):
         client = InfluxDatabaseClient(

@@ -12,11 +12,11 @@ def main():
     import time
     import random
 
-    from agent import MetricsAgent, MetricsAggregatorStats
-    from agent.db_client import InfluxDBClient
+    from metrics_agent import MetricsAgent, MetricsAggregatorStats
+    from metrics_agent.db_client import InfluxDatabaseClient
 
     # Create a client for the agent to write data to a database
-    client = InfluxDBClient("config/config.toml", local_tz="America/Vancouver")
+    client = InfluxDatabaseClient("config/config.toml", local_tz="America/Vancouver")
 
     # create the agent and assign it the client and desired aggregator, as well as the desired interval for updating the database
     metrics_agent = MetricsAgent(

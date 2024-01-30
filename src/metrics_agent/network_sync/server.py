@@ -1,9 +1,9 @@
 import socketserver
 import logging
-from agent.buffer import Buffer
+from metrics_agent.buffer import Buffer
 from typing import List, Tuple
 
-from network_sync.byte_stream import ByteStream
+from metrics_agent.network_sync.byte_stream import ByteStream
 
 logger = logging.getLogger(__name__)
 

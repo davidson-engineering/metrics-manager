@@ -12,9 +12,9 @@ import threading
 import logging
 from datetime import datetime
 
-from agent.aggregator import MetricsAggregatorStats
-from agent.buffer import MetricsBuffer
-from network_sync import MetricsServer, MetricTCPHandler
+from metrics_agent.aggregator import MetricsAggregatorStats
+from metrics_agent.buffer import MetricsBuffer
+from metrics_agent.network_sync import MetricsServer, MetricTCPHandler
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +153,7 @@ class MetricsAgent:
 
 
 def main():
-    from agent.db_client import InfluxDatabaseClient
+    from metrics_agent.db_client import InfluxDatabaseClient
 
     client = InfluxDatabaseClient("config/influx.toml", local_tz="America/Vancouver")
 

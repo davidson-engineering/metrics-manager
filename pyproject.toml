@@ -42,6 +42,8 @@ version = {attr = "agent.__version__"}
 test = [
   "pytest >= 7.4.4",
 ]
+[project.scripts]
+my-script = "my_package.module:function"
 
 [project.urls]
 homepage = "https://davidson.engineering"

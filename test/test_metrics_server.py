@@ -1,12 +1,12 @@
 import pytest
-from network_sync import MetricsClient
+from metrics_agent import MetricsClient
 import time
 from datetime import datetime, timedelta, timezone
 import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from agent import MetricsAgent
+    from metrics_agent import MetricsAgent
 
 
 def test_db_client(metrics_agent_server):
@@ -39,7 +39,7 @@ def test_metrics_client(metrics_agent_server, caplog, random_dataset_1):
     client.run_until_buffer_empty()
     agent.run_until_buffer_empty()
 
-    time.sleep(1)
+    time.sleep(2)
 
     time_stop = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 

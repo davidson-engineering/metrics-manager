@@ -1,5 +1,5 @@
 import socket
-from agent.buffer import Buffer
+from metrics_agent.buffer import Buffer
 from datetime import datetime, timezone
 from typing import Union
 import socket
@@ -7,7 +7,7 @@ import time
 import threading
 import logging
 
-from network_sync.byte_stream import ByteStream
+from metrics_agent.network_sync.byte_stream import ByteStream
 
 logger = logging.getLogger(__name__)
 
