@@ -7,7 +7,7 @@ from network_sync.byte_stream import ByteStream
 
 logger = logging.getLogger(__name__)
 
-MAXIMUM_PACKET_SIZE = 1500
+MAXIMUM_PACKET_SIZE = 4096
 
 buffer = Buffer(maxlen=1024)
 data_decoder = ByteStream()
@@ -28,11 +28,15 @@ class MetricTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
         global buffer
         try:
-            data = data_decoder.decode(self.request.recv(MAXIMUM_PACKET_SIZE))
+            data = self.request.recv(MAXIMUM_PACKET_SIZE)
+            length = len(data)
+            data = data_decoder.decode(data)
             # ignore any blank data
             if is_empty(data):
                 return
-            logger.info(f"Received data from {self.client_address[0]}: {data}")
+            logger.info(
+                f"Received {length} bytes of data from {self.client_address[0]}"
+            )
             buffer.add(data)  # Append the data to the deque
         except Exception as e:
             logger.error(e)

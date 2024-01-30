@@ -1,6 +1,6 @@
 [influx2]
-    # url = "http://localhost:8086"
-    url = "http://pi-monitor.local:8087"
+    url = "http://localhost:8086"
+    # url = "http://pi-monitor.local:8087"
     token = "super_secret_token"
     org = "my_org"
     timeout = 6000

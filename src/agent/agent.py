@@ -25,18 +25,16 @@ class DataFormatException(Exception):
 
 class MetricsAgent:
     """
+
     An agent for collecting, aggregating and sending metrics to a database
 
-    Parameters
-    ----------
-    interval : int
-        The time interval (in seconds) between sending metrics to the database
-    client : InfluxDatabaseClient
-        The client for writing metrics to the database
-    aggregator : MetricsAggregator
-        The aggregator for aggregating metrics before sending them to the database
-    autostart : bool
-        Whether to start the aggregator thread automatically upon initialization
+    :param interval: The interval at which the agent will aggregate and send metrics to the database
+    :param server: Whether to start a server to receive metrics from other agents
+    :param client: The client to send metrics to
+    :param aggregator: The aggregator to use to aggregate metrics
+    :param autostart: Whether to start the aggregator thread automatically
+    :param port: The port to start the server on
+    :param host: The host to start the server on
 
     """
 
@@ -57,20 +55,14 @@ class MetricsAgent:
         if server is True:
             self.server: MetricsServer = MetricsServer((host, port), MetricTCPHandler)
 
-            server_thread: threading.Thread = threading.Thread(
-                target=self.server.start_server
-            )
-            server_thread.daemon = True
+            self.server_thread: threading.Thread = threading.Thread(
+                target=self.server.start_server, daemon=True
+            ).start()
 
-            server_datafeed_thread: threading.Thread = threading.Thread(
-                target=self.feed_data_from_server
-            )
-            server_datafeed_thread.daemon = True
+            self.server_datafeed_thread: threading.Thread = threading.Thread(
+                target=self.feed_data_from_server, daemon=True
+            ).start()
 
-            self.server_thread = server_thread
-            self.server_datafeed_thread = server_datafeed_thread
-
-            self.start_server()
         else:
             self.server = server
 
@@ -98,14 +90,15 @@ class MetricsAgent:
                     self.client.send(aggregated_metrics)
 
     def start_aggregator_thread(self):
-        aggregator_thread = threading.Thread(target=self.run_aggregator, daemon=True)
-        aggregator_thread.start()
+        self.aggregator_thread = threading.Thread(
+            target=self.run_aggregator, daemon=True
+        ).start()
         logger.debug("Started aggregator thread")
 
     def run_aggregator(self):
         while True:
             self.aggregate_and_send()
-            time.sleep(1)  # Adjust sleep time as needed
+            time.sleep(self.interval)  # Adjust sleep time as needed
 
     def stop_aggregator_thread(self):
         self.aggregator_thread.join()
@@ -122,12 +115,6 @@ class MetricsAgent:
         while self._metrics_buffer.not_empty():
             time.sleep(self.interval)
         logger.debug("Buffer is empty")
-
-    def start_server(self):
-        self.server_thread.start()
-        logger.info("Started server thread")
-        self.server_datafeed_thread.start()
-        logger.info("Started server datafeed thread")
 
     def feed_data_from_server(self):
         # Check that data from buffer is in correct format for add_metric
@@ -147,12 +134,22 @@ class MetricsAgent:
                 logger.debug("No data from server, sleeping")
                 time.sleep(1)
 
+    def start(self):
+        self.start_aggregator_thread()
+        return self
+
     def __del__(self):
-        # This method is called when the object is about to be destroyed
-        self.stop_aggregator_thread()
-        logger.debug("Stopped aggregator thread")
-        self.server.stop_server()
-        logger.debug("Stopped server thread")
+        try:
+            # This method is called when the object is about to be destroyed
+            self.stop_aggregator_thread()
+            logger.debug("Stopped aggregator thread")
+        except AttributeError:
+            pass
+        try:
+            self.server.stop_server()
+            logger.debug("Stopped server thread")
+        except AttributeError:
+            pass
 
 
 def main():
