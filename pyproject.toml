@@ -29,6 +29,11 @@ dependencies = [
    "fast-influxdb-client @ git+https://github.com/davidson-engineering/fast-influxdb-client.git@v1.0.5"
 ]
 
+[tool.setuptools]
+packages = ["agent", "network_sync"]
+py-modules = ["__init__"] # dash, not underscore
+
+
 # If a module, then use fetch version from src/module_name/__init__.py
 [tool.setuptools.dynamic]
 version = {attr = "metrics_agent.__version__"}
