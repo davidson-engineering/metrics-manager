@@ -31,14 +31,12 @@ dependencies = [
 
 # If a module, then use fetch version from src/module_name/__init__.py
 [tool.setuptools.dynamic]
-version = {attr = "agent.__version__"}
+version = {attr = "metrics_agent.__version__"}
 
 [project.optional-dependencies]
 test = [
   "pytest >= 7.4.4",
 ]
-[project.scripts]
-my-script = "my_package.module:function"
 
 [project.urls]
 homepage = "https://davidson.engineering"
