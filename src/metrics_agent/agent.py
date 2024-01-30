@@ -53,6 +53,9 @@ class MetricsAgent:
         self._lock = threading.Lock()  # To ensure thread safety
 
         if server is True:
+            import socketserver
+
+            socketserver.TCPServer.allow_reuse_address = True
             self.server: MetricsServer = MetricsServer((host, port), MetricTCPHandler)
 
             self.server_thread: threading.Thread = threading.Thread(
