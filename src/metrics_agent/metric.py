@@ -17,15 +17,14 @@ class Metric(Sequence):
         return f"{self.name}: {self.value} @ {self.time}"
 
     def __getitem__(self, index):
-        match index:
-            case 0:
-                return self.name
-            case 1:
-                return self.value
-            case 2:
-                return self.time
-            case _:
-                raise IndexError
+        if index == 0:
+            return self.name
+        elif index == 1:
+            return self.value
+        elif index == 2:
+            return self.time
+        else:
+            raise IndexError("Metric index out of range")
 
     def __len__(self):
         return len(asdict(self))
