@@ -151,6 +151,12 @@ class MetricsAgent:
         except AttributeError:
             pass
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.__del__()
+
 
 def main():
     from metrics_agent.db_client import InfluxDatabaseClient
