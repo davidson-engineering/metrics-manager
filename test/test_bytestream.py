@@ -1,4 +1,4 @@
-from network_sync import ByteStream
+from metrics_agent.network_sync import ByteStream
 
 
 def test_bytestream_encode():
