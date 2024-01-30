@@ -10,13 +10,12 @@ if TYPE_CHECKING:
 
 
 def test_db_client(metrics_agent_server):
-    agent = metrics_agent_server()
-    assert agent.client._client.ping() is True
+    assert metrics_agent_server.client._client.ping() is True
 
 
 def test_metrics_client(metrics_agent_server, caplog, random_dataset_1):
     caplog.set_level(logging.INFO)
-    agent: MetricsAgent = metrics_agent_server(interval=1)
+    agent: MetricsAgent = metrics_agent_server
     agent.start_aggregator_thread()
 
     client = MetricsClient(host="localhost", port=9000).start()
