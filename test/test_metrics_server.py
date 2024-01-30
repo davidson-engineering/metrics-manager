@@ -35,7 +35,7 @@ def test_metrics_client(metrics_agent_server, caplog, random_dataset_1):
         client.run_until_buffer_empty()
         agent.run_until_buffer_empty()
 
-        time.sleep(3)
+        time.sleep(5)
 
         time_stop = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
