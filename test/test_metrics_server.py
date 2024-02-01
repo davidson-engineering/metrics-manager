@@ -3,14 +3,13 @@ from metrics_agent import MetricsClient
 import time
 from datetime import datetime, timedelta, timezone
 import logging
-from typing import TYPE_CHECKING
+from metrics_agent import MetricsAgent
 
-if TYPE_CHECKING:
-    from metrics_agent import MetricsAgent
+logger = logging.getLogger(__name__)
 
 
-def test_metrics_client(metrics_agent_server, caplog, random_dataset_1):
-    caplog.set_level(logging.INFO)
+def test_metrics_client(metrics_agent_server: MetricsAgent, caplog, random_dataset_1):
+    caplog.set_level(logging.DEBUG)
     with metrics_agent_server as agent:
         assert agent.client._client.ping() is True
         agent.start_aggregator_thread()
@@ -35,7 +34,7 @@ def test_metrics_client(metrics_agent_server, caplog, random_dataset_1):
         client.run_until_buffer_empty()
         agent.run_until_buffer_empty()
 
-        time.sleep(5)
+        time.sleep(10)
 
         time_stop = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -48,6 +47,7 @@ def test_metrics_client(metrics_agent_server, caplog, random_dataset_1):
 
         df = agent.client._client.query_api().query_data_frame(query)
         assert df["count"].max() == pytest.approx(100, abs=100)
+        logger.debug("first test passed")
 
         # Query the data back from the database as a pandas dataframe
         query = (

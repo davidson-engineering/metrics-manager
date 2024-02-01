@@ -13,8 +13,9 @@ import logging
 from datetime import datetime
 
 from metrics_agent.aggregator import MetricsAggregatorStats
-from metrics_agent.buffer import MetricsBuffer
-from metrics_agent.network_sync import MetricsServer, MetricTCPHandler
+from metrics_agent.buffer.buffer import MetricsBuffer
+from metrics_agent.network_sync import AgentServerTCP, AgentTCPHandler
+from metrics_agent.db_client import DatabaseClient
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +59,6 @@ class MetricsAgent:
             # socketserver.TCPServer.allow_reuse_address = True
             self.server: MetricsServer = MetricsServer((host, port), MetricTCPHandler)
 
-            self.server_thread: threading.Thread = threading.Thread(
-                target=self.server.start_server, daemon=True
-            ).start()
-
             self.server_datafeed_thread: threading.Thread = threading.Thread(
                 target=self.feed_data_from_server, daemon=True
             ).start()
@@ -70,7 +67,7 @@ class MetricsAgent:
             self.server = server
 
         self.interval = interval
-        self.client = client
+        self.client: DatabaseClient = client
         self.aggregator = aggregator or MetricsAggregatorStats()
 
         if autostart:
@@ -78,19 +75,17 @@ class MetricsAgent:
             logger.info("Started aggregator thread")
 
     def add_metric(self, name, value, timestamp=None):
-        with self._lock:
-            self._metrics_buffer.add_metric(name, value, timestamp)
-            logger.debug(f"Added metric to buffer: {name}={value}")
+        self._metrics_buffer.add_metric(name, value, timestamp)
+        logger.debug(f"Added metric to buffer: {name}={value}")
 
     def aggregate_and_send(self):
-        with self._lock:
-            if time.time() - self._last_sent_time >= self.interval:
-                if self._metrics_buffer.not_empty():
-                    # dump buffer to list of metrics
-                    metrics = self._metrics_buffer.dump_buffer()
-                    self._last_sent_time = time.time()
-                    aggregated_metrics = self.aggregator.aggregate(metrics)
-                    self.client.send(aggregated_metrics)
+        if time.time() - self._last_sent_time >= self.interval:
+            if self._metrics_buffer.not_empty():
+                # dump buffer to list of metrics
+                metrics = self._metrics_buffer.dump()
+                self._last_sent_time = time.time()
+                aggregated_metrics = self.aggregator.aggregate(metrics)
+                self.client.send(aggregated_metrics)
 
     def start_aggregator_thread(self):
         self.aggregator_thread = threading.Thread(
@@ -109,10 +104,10 @@ class MetricsAgent:
 
     def clear_metrics_buffer(self):
         with self._lock:
-            self._metrics_buffer.clear_buffer()
+            self._metrics_buffer.clear()
 
     def get_metrics_buffer_size(self):
-        return self._metrics_buffer.get_buffer_size()
+        return self._metrics_buffer.get_size()
 
     def run_until_buffer_empty(self):
         while self._metrics_buffer.not_empty():
