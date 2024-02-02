@@ -24,7 +24,7 @@ class InfluxDatabaseClient(DatabaseClient):
     def convert(self, metric):
         try:
             time = metric.time.tz_localize(self.local_tz)
-        except TypeError:
+        except (TypeError, AttributeError):
             time = metric.time
         return InfluxMetric(
             measurement=metric.name,

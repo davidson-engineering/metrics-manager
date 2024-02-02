@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import pickle
+import json
 
 
 class Packager(ABC):
@@ -76,3 +77,13 @@ class PicklerPackager(Packager):
 
     def unpack(self, data):
         return pickle.loads(data)
+
+
+class JSONPackager(Packager):
+    def pack(self, data, terminate=True):
+        json_packed = json.dumps(data) + (self.terminator if terminate else "")
+        return json_packed.encode("utf-8")
+
+    def unpack(self, data):
+        if data := data.decode("utf-8").removesuffix(self.terminator):
+            return json.loads(data)

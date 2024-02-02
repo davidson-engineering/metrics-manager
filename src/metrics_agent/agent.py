@@ -10,14 +10,16 @@
 import time
 import threading
 import logging
-from datetime import datetime
 
 from metrics_agent.aggregator import MetricsAggregatorStats
 from metrics_agent.buffer.buffer import MetricsBuffer
-from metrics_agent.network_sync import AgentServerTCP, AgentTCPHandler
+from metrics_agent.network_sync import AgentServerTCP
 from metrics_agent.db_client import DatabaseClient
 
 logger = logging.getLogger(__name__)
+
+BUFFER_LENGTH_AGENT = 8192
+BUFFER_LENGTH_SERVER = 8192
 
 
 class DataFormatException(Exception):
@@ -48,20 +50,22 @@ class MetricsAgent:
         autostart=True,
         port=9000,
         host="localhost",
+        buffer_length=None,
     ):
-        self._metrics_buffer = MetricsBuffer()
+        self._metrics_buffer = MetricsBuffer(
+            maxlen=buffer_length or BUFFER_LENGTH_AGENT
+        )
         self._last_sent_time = time.time()
         self._lock = threading.Lock()  # To ensure thread safety
 
         if server is True:
-            import socketserver
-
-            # socketserver.TCPServer.allow_reuse_address = True
-            self.server: MetricsServer = MetricsServer((host, port), MetricTCPHandler)
-
-            self.server_datafeed_thread: threading.Thread = threading.Thread(
-                target=self.feed_data_from_server, daemon=True
-            ).start()
+            self.server = AgentServerTCP(
+                output_buffer=self._metrics_buffer,
+                host=host,
+                port=port,
+                buffer_length=buffer_length or BUFFER_LENGTH_SERVER,
+            )
+            self.server.daemon = True
 
         else:
             self.server = server
@@ -75,7 +79,7 @@ class MetricsAgent:
             logger.info("Started aggregator thread")
 
     def add_metric(self, name, value, timestamp=None):
-        self._metrics_buffer.add_metric(name, value, timestamp)
+        self._metrics_buffer.add((name, value, timestamp))
         logger.debug(f"Added metric to buffer: {name}={value}")
 
     def aggregate_and_send(self):
@@ -114,24 +118,6 @@ class MetricsAgent:
             time.sleep(self.interval)
         logger.debug("Buffer is empty")
 
-    def feed_data_from_server(self):
-        # Check that data from buffer is in correct format for add_metric
-        while True:
-            logger.debug("Checking for data from server")
-            if data_new := self.server.fetch_buffer():
-                for data in data_new:
-                    if not data[0]:
-                        continue
-                    name, value, timestamp = data
-                    self.add_metric(
-                        name=name,
-                        value=float(value),
-                        timestamp=datetime.fromtimestamp(float(timestamp)),
-                    )
-            else:
-                logger.debug("No data from server, sleeping")
-                time.sleep(1)
-
     def start(self):
         self.start_aggregator_thread()
         return self
@@ -144,7 +130,7 @@ class MetricsAgent:
         except AttributeError:
             pass
         try:
-            self.server.stop_server()
+            self.server.stop()
             logger.debug("Stopped server thread")
         except AttributeError:
             pass
@@ -163,16 +149,17 @@ def main():
 
     # Example usage
     metrics_agent = MetricsAgent(
-        interval=1, client=client, aggregator=MetricsAggregatorStats()
+        interval=1, client=client, aggregator=MetricsAggregatorStats(), server=True
     )
 
-    n = 1000000
+    n = 10_000
     # Simulating metric collection
     for _ in range(n):
         metrics_agent.add_metric(name="queries", value=True)
-
-    # Wait for the agent to finish sending all metrics to the database before ending the program
-    metrics_agent.run_until_buffer_empty()
+    while True:
+        # Wait for the agent to finish sending all metrics to the database before ending the program
+        metrics_agent.run_until_buffer_empty()
+        time.sleep(1)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import logging
 from copy import deepcopy
 
 
-from metrics_agent.buffer.packager import Packager, SeparatorPackager
+from metrics_agent.buffer.packager import Packager, SeparatorPackager, JSONPackager
 from metrics_agent.metric import Metric
 
 logger = logging.getLogger(__name__)
@@ -74,13 +74,61 @@ class Buffer:
 
 
 class MetricsBuffer(Buffer):
-    def add_metric(self, name, value, timestamp=None):
+    def add(self, metric):
+        name, value, timestamp = metric
         timestamp = timestamp or datetime.now(timezone.utc)
         metric = Metric(name, value, timestamp)
-        self.add(metric)
+        self.buffer.append(metric)
 
 
-class PacketBuffer(Buffer):
+class PackagedBuffer(Buffer):
+    def __init__(
+        self,
+        data=None,
+        packager: Packager = None,
+        maxlen=4096,
+        terminator=b"\0",
+    ):
+        data = data or []
+        super().__init__(data, maxlen=maxlen)
+        self.packager = packager or JSONPackager()
+        self.terminator = terminator
+        self.len_terminator = len(terminator)
+
+    def pack(self, data):
+        if self.packager:
+            return self.packager.pack(data)
+        return data
+
+    def unpack(self, data):
+        if self.packager:
+            return self.packager.unpack(data)
+        return data
+
+    def pack_next(self, terminate=True):
+        next_data = self.buffer.popleft()
+        # pack the next data before returning it
+        return self.packager.pack(next_data, terminate)
+
+    def unpack_next(self):
+        next_data = self.buffer.popleft()
+        return self.packager.unpack(next_data)
+
+    def dump(self):
+        packages = []
+        while self.not_empty():
+            package = self.pack_next()
+            packages.append(package)
+        return packages
+
+    def unpack_all(self):
+        data = []
+        for package in self.dump():
+            data.extend(self.packager.unpack(package))
+        return data
+
+
+class PacketBuffer(PackagedBuffer):
     def __init__(
         self,
         data=None,
@@ -112,30 +160,12 @@ class PacketBuffer(Buffer):
         self.terminator = terminator
         self.len_terminator = len(terminator)
 
-    def next_package(self):
-        next_data = next(self)
-        # If a packager is specified, pack the next data before returning it
-        if self.packager:
-            return self.packager.pack(next_data, terminate=False)
-        # If no packager is specified, return the next data
-        return next_data
-
-    def pack(self, data, terminate=True):
-        if self.packager:
-            return self.packager.pack(data, terminate)
-        return data
-
-    def unpack(self, data):
-        if self.packager:
-            return self.packager.unpack(data)
-        return data
-
-    def next_packet(self, max_packet_size=None):
+    def pack_next(self, max_packet_size=None):
         # If max_packet_size is not specified, use the default value
         max_packet_size = max_packet_size or self.max_packet_size
         packet = b""
-        # Get the next package
-        data = self.next_package()
+        # Get the next package using the PackagedBuffer method
+        data = super().pack_next(terminate=False)
         # Check if the next package is too large to fit in the specified packet size
         if len(data) > max_packet_size:
             raise ValueError(
@@ -147,7 +177,7 @@ class PacketBuffer(Buffer):
             packet += data
             try:
                 # Try get the next package. If there are no more packages, break the loop
-                data = self.next_package()
+                data = super().pack_next(terminate=False)
             except IndexError:
                 break
         else:
@@ -156,14 +186,14 @@ class PacketBuffer(Buffer):
         # Add the terminator to the packet before returning it
         return packet + self.terminator
 
-    def dump_as_packets(self, max_packet_size=None):
+    def dump(self, max_packet_size=None):
         packets = []
         while self.not_empty():
-            packet = self.next_packet(max_packet_size)
+            packet = self.pack_next(max_packet_size)
             packets.append(packet)
         return packets
 
-    def unpack_packets(self):
+    def unpack_all(self):
         data = []
         for packet in self.dump():
             packet = self.unpack(packet)

@@ -9,8 +9,8 @@ import logging
 from abc import ABC, abstractmethod
 import bufsock
 
-from metrics_agent.buffer import PacketBuffer
-from metrics_agent.buffer import PicklerPackager
+from metrics_agent.buffer import PacketBuffer, PackagedBuffer
+from metrics_agent.buffer import PicklerPackager, JSONPackager
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +22,7 @@ class AgentClient(ABC):
     def __init__(self, host="localhost", port=0, autostart=False, update_interval=1):
         self.host = host
         self.port = port
-        self._buffer = PacketBuffer(
-            packager=PicklerPackager(), max_packet_size=MAXIMUM_PACKET_SIZE
-        )
+        self._buffer = PackagedBuffer(packager=JSONPackager())
         self.update_interval = update_interval
         self.run_client_thread = threading.Thread(target=self.run_client, daemon=True)
         if autostart:
@@ -74,7 +72,7 @@ class AgentClientTCP(AgentClient):
         while self._buffer.not_empty():
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((self.host, self.port))
-                packet = self._buffer.next_packet()
+                packet = self._buffer.pack_next()
                 logger.debug(f"Sending packet: {packet}")
                 s.send(packet)
 
@@ -83,7 +81,7 @@ class AgentClientUDP(AgentClient):
     def send(self):
         while self._buffer.not_empty():
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                packet = self._buffer.next_packet()
+                packet = self._buffer.pack_next()
                 logger.debug(f"Sending packet: {packet}")
                 s.sendto(packet, (self.host, self.port))
 
@@ -107,6 +105,7 @@ class MetricsClientUDP(AgentClientUDP, MetricsMixin):
 
 def main():
     import logging
+    import random
 
     logging.basicConfig(level=logging.DEBUG)
     client_config = {
@@ -115,15 +114,15 @@ def main():
     }
 
     client = MetricsClientTCP(**client_config)
+    random_metrics = [("cpu_usage", random.random(), time.time()) for _ in range(2048)]
 
     # Example: Add metrics to the buffer
-    client.add_metric("cpu_usage", 80.0, time.time())
-    client.add_metric("memory_usage", 60.0, time.time())
-
+    for metric in random_metrics:
+        client.add_metric(*metric)
     # Example: Send the buffer to the server
     client.send()
-
-    time.sleep(10)
+    while True:
+        time.sleep(1)
 
 
 if __name__ == "__main__":

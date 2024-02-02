@@ -1,5 +1,5 @@
 import pytest
-from metrics_agent import MetricsClient
+from metrics_agent.network_sync import MetricsClientTCP
 import time
 from datetime import datetime, timedelta, timezone
 import logging
@@ -14,7 +14,7 @@ def test_metrics_client(metrics_agent_server: MetricsAgent, caplog, random_datas
         assert agent.client._client.ping() is True
         agent.start_aggregator_thread()
 
-        client = MetricsClient(host="localhost", port=9000).start()
+        client = MetricsClientTCP(host="localhost", port=9000).start()
 
         time_start = (datetime.now(timezone.utc) - timedelta(seconds=10)).strftime(
             "%Y-%m-%dT%H:%M:%SZ"
