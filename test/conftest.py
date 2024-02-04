@@ -105,7 +105,7 @@ def metrics_agent():
 
 @pytest.fixture
 def metrics_agent_server():
-    from metrics_agent.agent import MetricsAgent
+    from metrics_agent import MetricsAgent
     from metrics_agent.db_client import InfluxDatabaseClient
     from metrics_agent.aggregator import MetricsAggregatorStats
 

@@ -1,4 +1,12 @@
-from dataclasses import dataclass, asdict
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# ----------------------------------------------------------------------------
+# Created By  : Matthew Davidson
+# Created Date: 2024-01-23
+# Copyright © 2024 Davidson Engineering Ltd.
+# ---------------------------------------------------------------------------
+
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from typing import Any
 from collections.abc import Sequence
@@ -8,15 +16,15 @@ from collections.abc import Sequence
 class Metric(Sequence):
     name: str
     value: float
-    time: datetime
+    time: datetime = field(default_factory=datetime.utcnow)
 
-    def __iter__(self):
+    def __iter__(self) -> Any:
         yield from asdict(self).values()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.name}: {self.value} @ {self.time}"
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> Any:
         if index == 0:
             return self.name
         elif index == 1:
@@ -26,7 +34,7 @@ class Metric(Sequence):
         else:
             raise IndexError("Metric index out of range")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(asdict(self))
 
 

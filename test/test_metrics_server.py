@@ -1,11 +1,20 @@
 import pytest
-from metrics_agent.network_sync import MetricsClientTCP
 import time
 from datetime import datetime, timedelta, timezone
 import logging
+
+from network_simple.client import SimpleClientTCP
 from metrics_agent import MetricsAgent
+from metrics_agent.metric import Metric
 
 logger = logging.getLogger(__name__)
+
+
+class MetricsClientTCP(SimpleClientTCP):
+    def add_metric(self, name, value, time):
+        if not isinstance(time, (int, float)):
+            time = time.timestamp()
+        self.buffer.append(Metric(name, value, time))
 
 
 def test_metrics_client(metrics_agent_server: MetricsAgent, caplog, random_dataset_1):
