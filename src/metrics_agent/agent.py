@@ -14,28 +14,40 @@ import logging
 from typing import Union
 from dataclasses import dataclass
 
-from metrics_agent.aggregator import MetricsAggregatorStats
+
 from buffered.buffer import Buffer
 from network_simple.server import SimpleServerTCP, SimpleServerUDP
 from metrics_agent.db_client import DatabaseClient
-
+from app_stats.app_stats import SessionStatistics, ApplicationStatistics
 from metrics_agent.exceptions import DataFormatException
 
 
-BUFFER_LENGTH_AGENT = 8192
-BUFFER_LENGTH_SERVER = 8192
+BUFFER_LENGTH_AGENT = 16_384
+BUFFER_LENGTH_SERVER = 16_384
 BATCH_SIZE_POST_PROCESSING = 1000
-BATCH_SIZE_SENDING = 1000
+BATCH_SIZE_SENDING = 2000
 
 DEFAULT_HOSTNAME = "localhost"
 DEFAULT_SERVER_PORT_TCP = 9000
 DEFAULT_SERVER_PORT_UDP = 9001
+
+SESSION_STATS_UPDATE_INTERVAL = 60
 
 
 @dataclass
 class HostAddress:
     host: str
     port: int
+
+
+@dataclass
+class MetricsAgentStatistics(ApplicationStatistics):
+    metrics_received: int = 0
+    metrics_sent: int = 0
+    metrics_failed: int = 0
+    metrics_buffered: int = 0
+    metrics_dropped: int = 0
+    metrics_processed: int = 0
 
 
 DEFAULT_ADDRESS_TCP = HostAddress(DEFAULT_HOSTNAME, DEFAULT_SERVER_PORT_TCP)
@@ -65,11 +77,16 @@ class MetricsAgent:
         post_processors: Union[list, tuple] = None,
         autostart: bool = True,
         update_interval: float = 10,
-        server_tcp: bool = False,
-        address_tcp: HostAddress = DEFAULT_ADDRESS_TCP,
-        server_udp: bool = False,
-        address_udp: HostAddress = DEFAULT_ADDRESS_UDP,
+        upload_stats_enabled: bool = False,
+        server_enabled_tcp: bool = False,
+        server_address_tcp: HostAddress = DEFAULT_ADDRESS_TCP,
+        server_enabled_udp: bool = False,
+        server_address_udp: HostAddress = DEFAULT_ADDRESS_UDP,
     ):
+        self.session_stats = SessionStatistics(
+            total_stats=MetricsAgentStatistics(), period_stats=MetricsAgentStatistics()
+        )
+        self.upload_stats_enabled = upload_stats_enabled
         # Set up the buffers
         self._input_buffer = Buffer(maxlen=BUFFER_LENGTH_AGENT)
         self._send_buffer = Buffer(maxlen=BUFFER_LENGTH_AGENT)
@@ -82,47 +99,53 @@ class MetricsAgent:
         self.post_processors = post_processors
 
         # Set up the server(s)
-        if server_tcp:
+        if server_enabled_tcp:
             self.server_tcp = SimpleServerTCP(
                 output_buffer=self._input_buffer,
-                host=address_tcp.host,
-                port=address_tcp.port,
+                host=server_address_tcp.host,
+                port=server_address_tcp.port,
                 buffer_length=BUFFER_LENGTH_SERVER,
-            ).start()
+            )
 
-        if server_udp:
+        if server_enabled_udp:
             self.server_udp = SimpleServerUDP(
                 output_buffer=self._input_buffer,
-                host=address_udp.host,
-                port=address_udp.port,
+                host=server_address_udp.host,
+                port=server_address_udp.port,
                 buffer_length=BUFFER_LENGTH_SERVER,
-            ).start()
+            )
 
         if autostart:
             self.start()
 
-    def add_metric(self, measurement: str, fields: dict, timestamp:int=None):
+    def add_metric(self, measurement: str, fields: dict, timestamp: int = None):
         self._input_buffer.add((measurement, fields, timestamp))
         logger.debug(f"Added metric to buffer: {measurement}={fields}")
+        self.session_stats.increment("metrics_received")
 
-    def process_buffer(self):
+    def post_process(self):
         while self._input_buffer.not_empty():
             # dump buffer to list of metrics
-            metrics_raw = self._input_buffer.dump()
-            metrics = [self.aggregator.convert(metric) for metric in metrics]
+            metrics = self._input_buffer.dump(BATCH_SIZE_POST_PROCESSING)
+            for post_processor in self.post_processors:
+                metrics = [post_processor.process(metric) for metric in metrics]
             self._last_sent_time = time.time()
-            aggregated_metrics = self.aggregator.aggregate(metrics)
-            self._send_buffer.add(aggregated_metrics)
+            self._send_buffer.add(metrics)
+            self.session_stats.increment("metrics_processed", len(metrics))
 
     def passthrough(self):
         # If no post processors are defined, pass through the input buffer to the send buffer
         while self._input_buffer.not_empty():
             self._send_buffer.add(next(self._input_buffer))
+            self.session_stats.increment("metrics_processed")
 
     def send_to_database(self):
         # Send the metrics in the send buffer to the database
         processed_metrics = self._send_buffer.dump(maximum=BATCH_SIZE_SENDING)
-        self.db_client.send(processed_metrics)
+        if processed_metrics:
+            self.db_client.send(processed_metrics)
+            logger.info(f"Sent {len(processed_metrics)} metrics to database")
+            self.session_stats.increment("metrics_sent", len(processed_metrics))
 
     # Thread management methods
     # *************************************************************************
@@ -134,17 +157,30 @@ class MetricsAgent:
         logger.debug("Started processing thread")
 
     def start_sending_thread(self):
-        self.sending_thread = threading.Thread(
-            target=self.run_sending, daemon=True
-        )
+        self.sending_thread = threading.Thread(target=self.run_sending, daemon=True)
         self.sending_thread.start()
         logger.debug("Started send thread")
+
+    def start_session_stats_thread(self):
+        self.session_stats_thread = threading.Thread(
+            target=self.update_session_stats, daemon=True
+        )
+        self.session_stats_thread.start()
+        logger.debug("Started session stats thread")
+
+    def update_session_stats(self):
+        while True:
+            self.db_client.send([self.session_stats.build_metrics()])
+            if self.server_tcp:
+                self.db_client.send([self.server_tcp.session_stats.build_metrics()])
+            if self.server_udp:
+                self.db_client.send([self.server_udp.session_stats.build_metrics()])
+            time.sleep(SESSION_STATS_UPDATE_INTERVAL)
 
     def run_post_processing(self):
         while True:
             if self.post_processors:
-                for post_processor in self.post_processors:
-                    post_processor(self._input_buffer)
+                self.post_process()
             else:
                 self.passthrough()
 
@@ -166,6 +202,8 @@ class MetricsAgent:
     def start(self):
         self.start_post_processing_thread()
         self.start_sending_thread()
+        if self.upload_stats_enabled:
+            self.start_session_stats_thread()
         return self
 
     # Buffer management methods
@@ -218,14 +256,12 @@ def main():
     db_client = InfluxDatabaseClient("config/influx.toml", local_tz="America/Vancouver")
 
     # Example usage
-    metrics_agent = MetricsAgent(
-        update_interval=1, db_client=db_client
-    )
+    metrics_agent = MetricsAgent(update_interval=1, db_client=db_client)
 
-    n = 100
+    n = 10000
     # Simulating metric collection
     for _ in range(n):
-        metrics_agent.add_metric("queries", {"count": 100}, time.time())
+        metrics_agent.add_metric("queries", {"count": 10}, time.time())
     while True:
         # Wait for the agent to finish sending all metrics to the database before ending the program
         metrics_agent.run_until_buffer_empty()

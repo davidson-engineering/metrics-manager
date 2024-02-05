@@ -86,7 +86,7 @@ def random_dataset_1_timed():
 def metrics_agent():
     from metrics_agent import MetricsAgent
     from metrics_agent.db_client import InfluxDatabaseClient
-    from metrics_agent.aggregator import MetricsAggregatorStats
+    from metrics_agent.post_processors import MetricsAggregatorStats
 
     def metrics_agent_func(update_interval=1):
         db_client = InfluxDatabaseClient(
@@ -106,7 +106,7 @@ def metrics_agent():
 def metrics_agent_server():
     from metrics_agent import MetricsAgent
     from metrics_agent.db_client import InfluxDatabaseClient
-    from metrics_agent.aggregator import MetricsAggregatorStats
+    from metrics_agent.post_processors import MetricsAggregatorStats
 
     db_client = InfluxDatabaseClient(
         config=INFLUXDB_TESTING_CONFIG_FILEPATH, local_tz=LOCAL_TZ

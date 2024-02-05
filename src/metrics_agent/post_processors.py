@@ -31,19 +31,18 @@ class MetricStats:
         yield from asdict(self).values()
 
 
-class MetricsAggregator(ABC):
-    def aggregate(self, metrics):
-        aggregated_results = self.aggregate_method(metrics)
+class MetricsProcessor(ABC):
+    def process(self, metrics):
+        results = self.process_method(metrics)
 
-        return aggregated_results
+        return results
 
     @abstractmethod
-    def aggregate_method(self, values):
-        ...
+    def process_method(self, metrics): ...
 
 
-class MetricsAggregatorStats(MetricsAggregator):
-    def aggregate_method(self, metrics):
+class AggregateStatistics(MetricsProcessor):
+    def process_method(self, metrics):
         df = pd.DataFrame(metrics).set_index("name")
         df_mean = df.groupby("name").mean()
         df_time = df_mean.drop(columns=["value"])

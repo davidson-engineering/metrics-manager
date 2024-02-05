@@ -7,9 +7,11 @@ from metrics_agent import Metric
 
 logger = logging.getLogger(__name__)
 
+
 def test_db_client(metrics_agent):
     agent = metrics_agent()
     assert agent.db_client._client.ping() is True
+
 
 def test_metrics_agent_simple(metrics_agent, random_dataset_1):
     agent = metrics_agent()
@@ -19,11 +21,11 @@ def test_metrics_agent_simple(metrics_agent, random_dataset_1):
         "%Y-%m-%dT%H:%M:%SZ"
     )
     random_metrics = [
-        ("cpu_usage", {"cpu0":rand_number["value"]}, time.time())
+        ("cpu_usage", {"cpu0": rand_number["value"]}, time.time())
         for rand_number in random_dataset_1
     ]
     random_metrics2 = [
-        ("memory_usage", {"mem0":1 - rand_number["value"]}, time.time())
+        ("memory_usage", {"mem0": 1 - rand_number["value"]}, time.time())
         for rand_number in random_dataset_1
     ]
     # Example: Add metrics to the buffer
@@ -49,9 +51,8 @@ def test_metrics_agent_simple(metrics_agent, random_dataset_1):
     logger.debug("first test passed")
 
 
-
 def run_aggregator_test(agent, dataset):
-    from metrics_agent.aggregator import MetricsAggregatorStats
+    from metrics_agent.post_processors import MetricsAggregatorStats
     import time
 
     random_dataset_1_stats = []

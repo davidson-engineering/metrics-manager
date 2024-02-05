@@ -4,27 +4,34 @@
 # Created By  : Matthew Davidson
 # Created Date: 2024-01-23
 # ---------------------------------------------------------------------------
-"""Some demostrative code for using the metrics agent"""
+"""Some demonstrative code for using the metrics agent"""
 # ---------------------------------------------------------------------------
+import logging
 
 
 def main():
     import time
     import random
 
-    from metrics_agent import MetricsAgent, MetricsAggregatorStats
+    from metrics_agent import MetricsAgent, AggregateStatistics
     from metrics_agent.db_client import InfluxDatabaseClient
 
-    # Create a client for the agent to write data to a database
-    client = InfluxDatabaseClient("config/influx.toml", local_tz="America/Vancouver")
+    logging.basicConfig(level=logging.DEBUG)
 
-    # create the agent and assign it the client and desired aggregator, as well as the desired interval for updating the database
-    metrics_agent = MetricsAgent(
-        interval=2, client=client, aggregator=MetricsAggregatorStats()
+    # Create a client for the agent to write data to a database
+    db_client = InfluxDatabaseClient(
+        "config/influx.toml", local_tz="America/Vancouver", default_bucket="testing"
     )
 
-    # Start the aggregator thread. The agent will automatically start aggregating and sending data to the database at the specified interval
-    metrics_agent.start_aggregator_thread()
+    # create the agent and assign it the client and desired aggregator, as well as the desired interval for updating the database
+    agent = MetricsAgent(
+        update_interval=0.2,
+        db_client=db_client,
+        server_enabled_tcp=True,
+        server_enabled_udp=True,
+        upload_stats_enabled=True,
+        # post_processors=[AggregateStatistics()],
+    )
 
     # Simulating metric collection
     # n = 1000
@@ -34,8 +41,8 @@ def main():
     #     metrics_agent.add_metric(name="random data", value=metric_value)
 
     # Wait for the agent to finish sending all metrics to the database before ending the program
-    while metrics_agent._metrics_buffer.not_empty():
-        time.sleep(metrics_agent.interval)
+    while True:
+        time.sleep(1)
 
 
 if __name__ == "__main__":
