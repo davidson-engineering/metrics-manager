@@ -1,35 +1,53 @@
 import pytest
-
+import logging
 from datetime import datetime, timedelta, timezone
-
+import time
 
 from metrics_agent import Metric
 
-
-@pytest.fixture
-def metrics_agent():
-    from metrics_agent.agent import MetricsAgent
-    from metrics_agent.db_client import InfluxDatabaseClient
-    from metrics_agent.aggregator import MetricsAggregatorStats
-
-    def metrics_agent_func(interval=1):
-        client = InfluxDatabaseClient(
-            config="test/influxdb_testing_config.toml", local_tz="America/Vancouver"
-        )
-        metrics_agent = MetricsAgent(
-            interval=interval,
-            client=client,
-            aggregator=MetricsAggregatorStats(),
-            autostart=False,
-        )
-        return metrics_agent
-
-    return metrics_agent_func
-
+logger = logging.getLogger(__name__)
 
 def test_db_client(metrics_agent):
     agent = metrics_agent()
-    assert agent.client._client.ping() is True
+    assert agent.db_client._client.ping() is True
+
+def test_metrics_agent_simple(metrics_agent, random_dataset_1):
+    agent = metrics_agent()
+    assert agent.update_interval == 1
+
+    time_start = (datetime.now(timezone.utc) - timedelta(seconds=10)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    random_metrics = [
+        ("cpu_usage", {"cpu0":rand_number["value"]}, time.time())
+        for rand_number in random_dataset_1
+    ]
+    random_metrics2 = [
+        ("memory_usage", {"mem0":1 - rand_number["value"]}, time.time())
+        for rand_number in random_dataset_1
+    ]
+    # Example: Add metrics to the buffer
+    [agent.add_metric(*metric) for metric in random_metrics]
+    [agent.add_metric(*metric) for metric in random_metrics2]
+
+    # agent.run_until_buffer_empty()
+    agent.run_until_buffer_empty()
+
+    time.sleep(10)
+
+    time_stop = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Query the data back from the database as a pandas dataframe
+    query = (
+        f'from(bucket: "testing") |> range(start: {time_start}, stop: {time_stop})'
+        '|> filter(fn: (r) => r._measurement == "cpu_usage")'
+        '|> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")'
+    )
+
+    df = agent.client._client.query_api().query_data_frame(query)
+    assert df["count"].max() == pytest.approx(100, abs=100)
+    logger.debug("first test passed")
+
 
 
 def run_aggregator_test(agent, dataset):
@@ -43,7 +61,7 @@ def run_aggregator_test(agent, dataset):
         # Calculate some stats on the dataset in a controlled environment
         random_dataset_1_stats.append(MetricsAggregatorStats().aggregate(metrics)[0])
 
-    interval = agent.interval
+    interval = agent.update_interval
     agent.start_aggregator_thread()
 
     time_start = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -80,18 +98,18 @@ def run_aggregator_test(agent, dataset):
 
 
 def test_metrics_aggregator_stats_small(metrics_agent, random_dataset_1_chunked):
-    interval = 1
-    agent = metrics_agent(interval=interval)
+    update_interval = 1
+    agent = metrics_agent(update_interval=update_interval)
     run_aggregator_test(agent=agent, dataset=random_dataset_1_chunked)
 
 
 def test_metrics_aggregator_stats_medium(metrics_agent, random_dataset_2_chunked):
-    interval = 1
-    agent = metrics_agent(interval=interval)
+    update_interval = 1
+    agent = metrics_agent(update_interval=update_interval)
     run_aggregator_test(agent=agent, dataset=random_dataset_2_chunked)
 
 
 def test_metrics_aggregator_stats_large(metrics_agent, random_dataset_3_chunked):
-    interval = 1
-    agent = metrics_agent(interval=interval)
+    update_interval = 1
+    agent = metrics_agent(update_interval=update_interval)
     run_aggregator_test(agent=agent, dataset=random_dataset_3_chunked)

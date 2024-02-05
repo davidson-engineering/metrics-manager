@@ -11,20 +11,37 @@
 import time
 import threading
 import logging
+from typing import Union
+from dataclasses import dataclass
 
 from metrics_agent.aggregator import MetricsAggregatorStats
 from buffered.buffer import Buffer
-from network_simple.server import SimpleServerTCP
+from network_simple.server import SimpleServerTCP, SimpleServerUDP
 from metrics_agent.db_client import DatabaseClient
 
-logger = logging.getLogger(__name__)
+from metrics_agent.exceptions import DataFormatException
+
 
 BUFFER_LENGTH_AGENT = 8192
 BUFFER_LENGTH_SERVER = 8192
+BATCH_SIZE_POST_PROCESSING = 1000
+BATCH_SIZE_SENDING = 1000
+
+DEFAULT_HOSTNAME = "localhost"
+DEFAULT_SERVER_PORT_TCP = 9000
+DEFAULT_SERVER_PORT_UDP = 9001
 
 
-class DataFormatException(Exception):
-    pass
+@dataclass
+class HostAddress:
+    host: str
+    port: int
+
+
+DEFAULT_ADDRESS_TCP = HostAddress(DEFAULT_HOSTNAME, DEFAULT_SERVER_PORT_TCP)
+DEFAULT_ADDRESS_UDP = HostAddress(DEFAULT_HOSTNAME, DEFAULT_SERVER_PORT_UDP)
+
+logger = logging.getLogger(__name__)
 
 
 class MetricsAgent:
@@ -44,89 +61,115 @@ class MetricsAgent:
 
     def __init__(
         self,
-        interval=10,
-        server=None,
-        client=None,
-        aggregator=None,
-        autostart=True,
-        port=9000,
-        host="localhost",
-        buffer_length=None,
+        db_client: DatabaseClient,
+        post_processors: Union[list, tuple] = None,
+        autostart: bool = True,
+        update_interval: float = 10,
+        server_tcp: bool = False,
+        address_tcp: HostAddress = DEFAULT_ADDRESS_TCP,
+        server_udp: bool = False,
+        address_udp: HostAddress = DEFAULT_ADDRESS_UDP,
     ):
-        self._input_buffer = Buffer(maxlen=buffer_length or BUFFER_LENGTH_AGENT)
-        self._send_buffer = Buffer(maxlen=buffer_length or BUFFER_LENGTH_AGENT)
-        self._last_sent_time = time.time()
-        self._lock = threading.Lock()  # To ensure thread safety
+        # Set up the buffers
+        self._input_buffer = Buffer(maxlen=BUFFER_LENGTH_AGENT)
+        self._send_buffer = Buffer(maxlen=BUFFER_LENGTH_AGENT)
 
-        if server is True:
-            self.server = SimpleServerTCP(
+        # Initialize the last sent time
+        self._last_sent_time: float = time.time()
+        # self._lock = threading.Lock()  # To ensure thread safety
+        self.update_interval = update_interval
+        self.db_client = db_client
+        self.post_processors = post_processors
+
+        # Set up the server(s)
+        if server_tcp:
+            self.server_tcp = SimpleServerTCP(
                 output_buffer=self._input_buffer,
-                host=host,
-                port=port,
-                buffer_length=buffer_length or BUFFER_LENGTH_SERVER,
-            )
-        else:
-            self.server = server
+                host=address_tcp.host,
+                port=address_tcp.port,
+                buffer_length=BUFFER_LENGTH_SERVER,
+            ).start()
 
-        self.interval = interval
-        self.client: DatabaseClient = client
-        self.aggregator = aggregator or MetricsAggregatorStats()
+        if server_udp:
+            self.server_udp = SimpleServerUDP(
+                output_buffer=self._input_buffer,
+                host=address_udp.host,
+                port=address_udp.port,
+                buffer_length=BUFFER_LENGTH_SERVER,
+            ).start()
 
         if autostart:
             self.start()
 
-    def add_metric(self, name, value, timestamp=None):
-        self._input_buffer.add((name, value, timestamp))
-        logger.debug(f"Added metric to buffer: {name}={value}")
+    def add_metric(self, measurement: str, fields: dict, timestamp:int=None):
+        self._input_buffer.add((measurement, fields, timestamp))
+        logger.debug(f"Added metric to buffer: {measurement}={fields}")
 
     def process_buffer(self):
-        if time.time() - self._last_sent_time >= self.interval:
-            if self._input_buffer.not_empty():
-                # dump buffer to list of metrics
-                metrics_raw = self._input_buffer.dump()
-                metrics = [self.aggregator.convert(metric) for metric in metrics]
-                self._last_sent_time = time.time()
-                aggregated_metrics = self.aggregator.aggregate(metrics)
-                self._send_buffer.add(aggregated_metrics)
+        while self._input_buffer.not_empty():
+            # dump buffer to list of metrics
+            metrics_raw = self._input_buffer.dump()
+            metrics = [self.aggregator.convert(metric) for metric in metrics]
+            self._last_sent_time = time.time()
+            aggregated_metrics = self.aggregator.aggregate(metrics)
+            self._send_buffer.add(aggregated_metrics)
 
     def passthrough(self):
+        # If no post processors are defined, pass through the input buffer to the send buffer
         while self._input_buffer.not_empty():
             self._send_buffer.add(next(self._input_buffer))
 
     def send_to_database(self):
-        processed_metrics = self._send_buffer.dump()
-        self.client.send(processed_metrics)
+        # Send the metrics in the send buffer to the database
+        processed_metrics = self._send_buffer.dump(maximum=BATCH_SIZE_SENDING)
+        self.db_client.send(processed_metrics)
 
-    def start_processing_thread(self):
-        self.processing_thread = threading.Thread(
-            target=self.run_processing, daemon=True
-        ).start()
+    # Thread management methods
+    # *************************************************************************
+    def start_post_processing_thread(self):
+        self.post_processing_thread = threading.Thread(
+            target=self.run_post_processing, daemon=True
+        )
+        self.post_processing_thread.start()
         logger.debug("Started processing thread")
 
     def start_sending_thread(self):
         self.sending_thread = threading.Thread(
             target=self.run_sending, daemon=True
-        ).start()
+        )
+        self.sending_thread.start()
         logger.debug("Started send thread")
 
-    def run_processing(self):
+    def run_post_processing(self):
         while True:
-            # self.process_buffer()
-            self.passthrough()
-            time.sleep(self.interval)  # Adjust sleep time as needed
+            if self.post_processors:
+                for post_processor in self.post_processors:
+                    post_processor(self._input_buffer)
+            else:
+                self.passthrough()
+
+            time.sleep(self.update_interval)  # Adjust sleep time as needed
 
     def run_sending(self):
         while True:
             self.send_to_database()
-            time.sleep(self.interval)
+            time.sleep(self.update_interval)
 
-    def stop_processing_thread(self):
-        self.processing_thread.join()
+    def stop_post_processing_thread(self):
+        self.post_processing_thread.join()
         logger.debug("Stopped processing thread")
 
     def stop_sending_thread(self):
         self.sending_thread.join()
         logger.debug("Stopped sending thread")
+
+    def start(self):
+        self.start_post_processing_thread()
+        self.start_sending_thread()
+        return self
+
+    # Buffer management methods
+    # *************************************************************************
 
     def clear_input_buffer(self):
         with self._lock:
@@ -137,28 +180,11 @@ class MetricsAgent:
 
     def run_until_buffer_empty(self):
         while self._input_buffer.not_empty():
-            time.sleep(self.interval)
+            time.sleep(self.update_interval)
         logger.debug("Buffer is empty")
 
-    def start(self):
-        self.start_processing_thread()
-        self.start_sending_thread()
-        return self
-
-    def __del__(self):
-        try:
-            # This method is called when the object is about to be destroyed
-            self.stop_processing_thread()
-        except AttributeError:
-            pass
-        try:
-            self.stop_sending_thread()
-        except AttributeError:
-            pass
-        try:
-            self.server.stop()
-        except AttributeError:
-            pass
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.db_client})"
 
     def __enter__(self):
         return self
@@ -166,23 +192,40 @@ class MetricsAgent:
     def __exit__(self, exc_type, exc_value, traceback):
         self.__del__()
 
+    def __del__(self):  # sourcery skip: use-contextlib-suppress
+        try:
+            # This method is called when the object is about to be destroyed
+            self.stop_post_processing_thread()
+        except AttributeError:
+            pass
+        try:
+            self.stop_sending_thread()
+        except AttributeError:
+            pass
+        try:
+            self.server_tcp.stop()
+            self.server_udp.stop()
+        except AttributeError:
+            pass
+        logger.info(f"Metrics agent {self.__repr__()} destroyed")
+
 
 def main():
     from metrics_agent.db_client import InfluxDatabaseClient
 
     logging.basicConfig(level=logging.DEBUG)
 
-    client = InfluxDatabaseClient("config/influx.toml", local_tz="America/Vancouver")
+    db_client = InfluxDatabaseClient("config/influx.toml", local_tz="America/Vancouver")
 
     # Example usage
     metrics_agent = MetricsAgent(
-        interval=1, client=client, aggregator=MetricsAggregatorStats(), server=True
+        update_interval=1, db_client=db_client
     )
 
-    # n = 10_000
-    # # Simulating metric collection
-    # for _ in range(n):
-    #     metrics_agent.add_metric(name="queries", value=True)
+    n = 100
+    # Simulating metric collection
+    for _ in range(n):
+        metrics_agent.add_metric("queries", {"count": 100}, time.time())
     while True:
         # Wait for the agent to finish sending all metrics to the database before ending the program
         metrics_agent.run_until_buffer_empty()

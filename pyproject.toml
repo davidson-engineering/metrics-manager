@@ -27,7 +27,7 @@ dependencies = [
    "pandas>=2.2.0",
    "pyarrow>=15.0.0",
    "tomli >= 1.1.0 ; python_version < '3.11'",
-   "fast-influxdb-client @ git+https://github.com/davidson-engineering/fast-influxdb-client.git@v1.0.6",
+   "fast-influxdb-client @ git+https://github.com/davidson-engineering/fast-influxdb-client.git@v1.0.8",
    "buffered @ git+https://github.com/davidson-engineering/buffered.git@v0.0.4",
    "network-simple @ git+https://github.com/davidson-engineering/network-simple.git@v0.0.3",
 ]

@@ -88,15 +88,14 @@ def metrics_agent():
     from metrics_agent.db_client import InfluxDatabaseClient
     from metrics_agent.aggregator import MetricsAggregatorStats
 
-    def metrics_agent_func(interval=1):
-        client = InfluxDatabaseClient(
+    def metrics_agent_func(update_interval=1):
+        db_client = InfluxDatabaseClient(
             config=INFLUXDB_TESTING_CONFIG_FILEPATH, local_tz=LOCAL_TZ
         )
         metrics_agent = MetricsAgent(
-            interval=interval,
-            client=client,
-            aggregator=MetricsAggregatorStats(),
-            autostart=False,
+            update_interval=update_interval,
+            db_client=db_client,
+            autostart=True,
         )
         return metrics_agent
 
@@ -109,16 +108,13 @@ def metrics_agent_server():
     from metrics_agent.db_client import InfluxDatabaseClient
     from metrics_agent.aggregator import MetricsAggregatorStats
 
-    client = InfluxDatabaseClient(
+    db_client = InfluxDatabaseClient(
         config=INFLUXDB_TESTING_CONFIG_FILEPATH, local_tz=LOCAL_TZ
     )
     metrics_agent = MetricsAgent(
-        interval=1,
-        client=client,
-        aggregator=MetricsAggregatorStats(),
-        autostart=False,
-        server=True,
-        host="localhost",
-        port=9000,
+        update_interval=1,
+        db_client=db_client,
+        autostart=True,
+        server_tcp=True,
     )
     return metrics_agent

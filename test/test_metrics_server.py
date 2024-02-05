@@ -20,7 +20,8 @@ class MetricsClientTCP(SimpleClientTCP):
 def test_metrics_client(metrics_agent_server: MetricsAgent, caplog, random_dataset_1):
     caplog.set_level(logging.DEBUG)
     with metrics_agent_server as agent:
-        assert agent.client._client.ping() is True
+        assert agent.db_client._client.ping() is True
+        
         agent.start_aggregator_thread()
 
         client = MetricsClientTCP(host="localhost", port=9000).start()
