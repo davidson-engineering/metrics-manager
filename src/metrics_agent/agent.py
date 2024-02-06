@@ -18,14 +18,14 @@ from dataclasses import dataclass
 from buffered.buffer import Buffer
 from network_simple.server import SimpleServerTCP, SimpleServerUDP
 from metrics_agent.db_client import DatabaseClient
-from app_stats.app_stats import SessionStatistics, ApplicationStatistics
+from application_metrics import SessionMetrics, ApplicationMetrics
 from metrics_agent.exceptions import DataFormatException
 
 
 BUFFER_LENGTH_AGENT = 16_384
 BUFFER_LENGTH_SERVER = 16_384
 BATCH_SIZE_POST_PROCESSING = 1000
-BATCH_SIZE_SENDING = 2000
+BATCH_SIZE_SENDING = 5000
 
 DEFAULT_HOSTNAME = "localhost"
 DEFAULT_SERVER_PORT_TCP = 9000
@@ -33,15 +33,12 @@ DEFAULT_SERVER_PORT_UDP = 9001
 
 SESSION_STATS_UPDATE_INTERVAL = 60
 
-
-@dataclass
-class HostAddress:
-    host: str
-    port: int
+DEFAULT_ADDRESS_TCP = (DEFAULT_HOSTNAME, DEFAULT_SERVER_PORT_TCP)
+DEFAULT_ADDRESS_UDP = (DEFAULT_HOSTNAME, DEFAULT_SERVER_PORT_UDP)
 
 
 @dataclass
-class MetricsAgentStatistics(ApplicationStatistics):
+class MetricsAgentStatistics(ApplicationMetrics):
     metrics_received: int = 0
     metrics_sent: int = 0
     metrics_failed: int = 0
@@ -49,9 +46,6 @@ class MetricsAgentStatistics(ApplicationStatistics):
     metrics_dropped: int = 0
     metrics_processed: int = 0
 
-
-DEFAULT_ADDRESS_TCP = HostAddress(DEFAULT_HOSTNAME, DEFAULT_SERVER_PORT_TCP)
-DEFAULT_ADDRESS_UDP = HostAddress(DEFAULT_HOSTNAME, DEFAULT_SERVER_PORT_UDP)
 
 logger = logging.getLogger(__name__)
 
@@ -79,11 +73,11 @@ class MetricsAgent:
         update_interval: float = 10,
         upload_stats_enabled: bool = False,
         server_enabled_tcp: bool = False,
-        server_address_tcp: HostAddress = DEFAULT_ADDRESS_TCP,
+        server_address_tcp: tuple = DEFAULT_ADDRESS_TCP,
         server_enabled_udp: bool = False,
-        server_address_udp: HostAddress = DEFAULT_ADDRESS_UDP,
+        server_address_udp: tuple = DEFAULT_ADDRESS_UDP,
     ):
-        self.session_stats = SessionStatistics(
+        self.session_stats = SessionMetrics(
             total_stats=MetricsAgentStatistics(), period_stats=MetricsAgentStatistics()
         )
         self.upload_stats_enabled = upload_stats_enabled
@@ -93,7 +87,6 @@ class MetricsAgent:
 
         # Initialize the last sent time
         self._last_sent_time: float = time.time()
-        # self._lock = threading.Lock()  # To ensure thread safety
         self.update_interval = update_interval
         self.db_client = db_client
         self.post_processors = post_processors
@@ -102,18 +95,20 @@ class MetricsAgent:
         if server_enabled_tcp:
             self.server_tcp = SimpleServerTCP(
                 output_buffer=self._input_buffer,
-                host=server_address_tcp.host,
-                port=server_address_tcp.port,
+                server_address=server_address_tcp,
                 buffer_length=BUFFER_LENGTH_SERVER,
             )
+        else:
+            self.server_tcp = None
 
         if server_enabled_udp:
             self.server_udp = SimpleServerUDP(
                 output_buffer=self._input_buffer,
-                host=server_address_udp.host,
-                port=server_address_udp.port,
+                server_address=server_address_udp,
                 buffer_length=BUFFER_LENGTH_SERVER,
             )
+        else:
+            self.server_udp = None
 
         if autostart:
             self.start()

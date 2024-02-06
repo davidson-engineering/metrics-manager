@@ -28,7 +28,6 @@ def main():
         update_interval=0.2,
         db_client=db_client,
         server_enabled_tcp=True,
-        server_enabled_udp=True,
         upload_stats_enabled=True,
         # post_processors=[AggregateStatistics()],
     )
