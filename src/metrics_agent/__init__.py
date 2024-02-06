@@ -1,4 +1,4 @@
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 from metrics_agent.agent import MetricsAgent
 from metrics_agent.metric import Metric
