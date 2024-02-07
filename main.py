@@ -16,6 +16,7 @@ def main():
     from metrics_agent import MetricsAgent, AggregateStatistics
     from metrics_agent.db_client import InfluxDatabaseClient
 
+
     logging.basicConfig(level=logging.INFO)
 
     # Create a client for the agent to write data to a database

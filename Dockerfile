@@ -7,12 +7,17 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
 
-# Install pip requirements
-COPY requirements.txt ./
+# Update pip
+RUN python -m pip install --upgrade pip
+# Install package using pip
+COPY src /app/src
+COPY ./ ./app
+COPY ./pyproject.toml ./
+# RUN pip install .
+# COPY requirements.txt ./
+WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 
-WORKDIR /app
-COPY src /app/src
 
 RUN mkdir /app/logs
 
