@@ -1,0 +1,29 @@
+[agent]
+update_interval = 1
+buffer_length = 16384
+
+[post_proccessing]
+batch_size = 1000
+
+[server]
+buffer_length = 16384
+[server.tcp]
+enabled = true
+ip_address = "gfyvrdatadash"
+port = 9000
+
+[server.udp]
+enabled = false
+ip_address = "localhost"
+port = 9001
+
+[node_agent]
+enabled = true
+update_interval = 2
+
+[database_client]
+batch_size = 5000
+
+[statistics]
+enabled = true
+update_interval = 60

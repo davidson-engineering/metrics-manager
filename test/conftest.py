@@ -118,3 +118,33 @@ def metrics_agent_server():
         server_tcp=True,
     )
     return metrics_agent
+
+
+import socket
+import threading
+
+
+def UDP_echo_server(host, port):
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_socket:
+        server_socket.bind((host, port))
+        print(f"Echo server is listening on {host}:{port}")
+
+        while True:
+            data, address = server_socket.recvfrom(1024)
+            print(f"Received data from {address}: {data.decode()}")
+
+            data = f"ECHO: {data.decode()}".encode()
+
+            server_socket.sendto(data, address)
+            print(f"Echoed back to {address}: {data.decode()}")
+
+
+@pytest.fixture
+def echo_server_in_thread():
+    def echo_server_in_thread_func(host, port):
+        server_thread = threading.Thread(target=UDP_echo_server, args=(host, port))
+        server_thread.daemon = True  # Daemonize the thread so it terminates when the main thread terminates
+        server_thread.start()
+        return server_thread
+
+    return echo_server_in_thread_func

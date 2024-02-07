@@ -13,7 +13,12 @@ import threading
 import logging
 from typing import Union
 from dataclasses import dataclass
+import asyncio
 
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 from buffered.buffer import Buffer
 from network_simple.server import SimpleServerTCP, SimpleServerUDP
@@ -21,20 +26,17 @@ from metrics_agent.db_client import DatabaseClient
 from application_metrics import SessionMetrics, ApplicationMetrics
 from metrics_agent.exceptions import DataFormatException
 
+from metrics_agent.node_client import NodeSwarmClient
 
-BUFFER_LENGTH_AGENT = 16_384
-BUFFER_LENGTH_SERVER = 16_384
-BATCH_SIZE_POST_PROCESSING = 1000
-BATCH_SIZE_SENDING = 5000
+logger = logging.getLogger(__name__)
 
-DEFAULT_HOSTNAME = "localhost"
-DEFAULT_SERVER_PORT_TCP = 9000
-DEFAULT_SERVER_PORT_UDP = 9001
 
-SESSION_STATS_UPDATE_INTERVAL = 60
+def load_toml(filepath):
+    with open(filepath, mode="rb") as fp:
+        return tomllib.load(fp)
 
-DEFAULT_ADDRESS_TCP = (DEFAULT_HOSTNAME, DEFAULT_SERVER_PORT_TCP)
-DEFAULT_ADDRESS_UDP = (DEFAULT_HOSTNAME, DEFAULT_SERVER_PORT_UDP)
+
+config = load_toml("config/application.toml")
 
 
 @dataclass
@@ -47,9 +49,6 @@ class MetricsAgentStatistics(ApplicationMetrics):
     metrics_processed: int = 0
 
 
-logger = logging.getLogger(__name__)
-
-
 class MetricsAgent:
     """
 
@@ -60,8 +59,6 @@ class MetricsAgent:
     :param client: The client to send metrics to
     :param aggregator: The aggregator to use to aggregate metrics
     :param autostart: Whether to start the aggregator thread automatically
-    :param port: The port to start the server on
-    :param host: The host to start the server on
 
     """
 
@@ -70,45 +67,75 @@ class MetricsAgent:
         db_client: DatabaseClient,
         post_processors: Union[list, tuple] = None,
         autostart: bool = True,
-        update_interval: float = 10,
-        upload_stats_enabled: bool = False,
-        server_enabled_tcp: bool = False,
-        server_address_tcp: tuple = DEFAULT_ADDRESS_TCP,
-        server_enabled_udp: bool = False,
-        server_address_udp: tuple = DEFAULT_ADDRESS_UDP,
+        update_interval: float = None,
     ):
-        self.session_stats = SessionMetrics(
-            total_stats=MetricsAgentStatistics(), period_stats=MetricsAgentStatistics()
+
+        # Setup Agent
+        # *************************************************************************
+        # Parse configuration from file
+
+        self.stats_upload_enabled = config["statistics"]["enabled"]
+        self.stats_update_interval = config["statistics"]["update_interval"]
+
+        buffer_length_agent = config["agent"]["buffer_length"]
+        buffer_length_server = config["server"]["buffer_length"]
+
+        self.batch_size_sending = config["database_client"]["batch_size"]
+        self.batch_size_post_processing = config["post_proccessing"]["batch_size"]
+
+        server_address_tcp = (
+            config["server"]["tcp"]["ip_address"],
+            config["server"]["tcp"]["port"],
         )
-        self.upload_stats_enabled = upload_stats_enabled
-        # Set up the buffers
-        self._input_buffer = Buffer(maxlen=BUFFER_LENGTH_AGENT)
-        self._send_buffer = Buffer(maxlen=BUFFER_LENGTH_AGENT)
+        server_address_udp = (
+            config["server"]["udp"]["ip_address"],
+            config["server"]["udp"]["port"],
+        )
+
+        # Set up the agent buffers
+        self._input_buffer = Buffer(maxlen=buffer_length_agent)
+        self._send_buffer = Buffer(maxlen=buffer_length_agent)
 
         # Initialize the last sent time
         self._last_sent_time: float = time.time()
-        self.update_interval = update_interval
+        self.update_interval = update_interval or config["agent"]["update_interval"]
         self.db_client = db_client
         self.post_processors = post_processors
 
         # Set up the server(s)
-        if server_enabled_tcp:
+        # *************************************************************************
+        if config["server"]["tcp"]["enabled"]:
             self.server_tcp = SimpleServerTCP(
                 output_buffer=self._input_buffer,
                 server_address=server_address_tcp,
-                buffer_length=BUFFER_LENGTH_SERVER,
+                buffer_length=buffer_length_server,
             )
         else:
             self.server_tcp = None
 
-        if server_enabled_udp:
+        if config["server"]["udp"]["enabled"]:
             self.server_udp = SimpleServerUDP(
                 output_buffer=self._input_buffer,
                 server_address=server_address_udp,
-                buffer_length=BUFFER_LENGTH_SERVER,
+                buffer_length=buffer_length_server,
             )
         else:
             self.server_udp = None
+
+        # Set up an Agent to retrieve data from the Arduino nodes
+        # *************************************************************************
+        if config["node_agent"]["enabled"]:
+            self.node_client = NodeSwarmClient(
+                buffer=self._input_buffer,
+                update_interval=config["node_agent"]["update_interval"],
+            )
+
+        # Setup agent statistics for monitoring
+        # *************************************************************************
+        self.session_stats = SessionMetrics(
+            total_stats=MetricsAgentStatistics(),
+            period_stats=MetricsAgentStatistics(),
+        )
 
         if autostart:
             self.start()
@@ -121,7 +148,7 @@ class MetricsAgent:
     def post_process(self):
         while self._input_buffer.not_empty():
             # dump buffer to list of metrics
-            metrics = self._input_buffer.dump(BATCH_SIZE_POST_PROCESSING)
+            metrics = self._input_buffer.dump(self.batch_size_post_processing)
             for post_processor in self.post_processors:
                 metrics = [post_processor.process(metric) for metric in metrics]
             self._last_sent_time = time.time()
@@ -136,7 +163,7 @@ class MetricsAgent:
 
     def send_to_database(self):
         # Send the metrics in the send buffer to the database
-        processed_metrics = self._send_buffer.dump(maximum=BATCH_SIZE_SENDING)
+        processed_metrics = self._send_buffer.dump(maximum=self.batch_size_sending)
         if processed_metrics:
             self.db_client.send(processed_metrics)
             logger.info(f"Sent {len(processed_metrics)} metrics to database")
@@ -170,7 +197,7 @@ class MetricsAgent:
                 self.db_client.send([self.server_tcp.session_stats.build_metrics()])
             if self.server_udp:
                 self.db_client.send([self.server_udp.session_stats.build_metrics()])
-            time.sleep(SESSION_STATS_UPDATE_INTERVAL)
+            time.sleep(self.stats_update_interval)
 
     def run_post_processing(self):
         while True:
@@ -197,7 +224,7 @@ class MetricsAgent:
     def start(self):
         self.start_post_processing_thread()
         self.start_sending_thread()
-        if self.upload_stats_enabled:
+        if self.stats_upload_enabled:
             self.start_session_stats_thread()
         return self
 
@@ -225,7 +252,7 @@ class MetricsAgent:
     def __exit__(self, exc_type, exc_value, traceback):
         self.__del__()
 
-    def __del__(self):  # sourcery skip: use-contextlib-suppress
+    def __del__(self):
         try:
             # This method is called when the object is about to be destroyed
             self.stop_post_processing_thread()
@@ -240,7 +267,7 @@ class MetricsAgent:
             self.server_udp.stop()
         except AttributeError:
             pass
-        logger.info(f"Metrics agent {self.__repr__()} destroyed")
+        logger.info(f"Metrics agent {self} destroyed")
 
 
 def main():

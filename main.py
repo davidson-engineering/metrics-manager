@@ -12,11 +12,11 @@ import logging
 def main():
     import time
     import random
-
+    import asyncio
     from metrics_agent import MetricsAgent, AggregateStatistics
     from metrics_agent.db_client import InfluxDatabaseClient
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     # Create a client for the agent to write data to a database
     db_client = InfluxDatabaseClient(
@@ -25,12 +25,10 @@ def main():
 
     # create the agent and assign it the client and desired aggregator, as well as the desired interval for updating the database
     agent = MetricsAgent(
-        update_interval=0.2,
         db_client=db_client,
-        server_enabled_tcp=True,
-        upload_stats_enabled=True,
         # post_processors=[AggregateStatistics()],
     )
+    asyncio.run(agent.node_client.request_data_periodically())
 
     # Simulating metric collection
     # n = 1000

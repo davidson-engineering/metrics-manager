@@ -13,6 +13,7 @@ from fast_influxdb_client import FastInfluxDBClient
 from datetime import datetime
 import pytz
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -88,9 +89,11 @@ class InfluxDatabaseClient(DatabaseClient):
                 ) from e
         elif isinstance(metric, dict):
             pass
+        elif isinstance(metric, str):
+            # Assume metric is JSON. Convert to dict
+            metric = json.loads(metric)
         else:
             raise ValueError("metric must be either a tuple, dict, or a dataclass")
-
         if "tags" not in metric:
             metric["tags"] = {}
         assert check_attributes(metric, ensure_keys)
