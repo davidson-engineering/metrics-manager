@@ -1,0 +1,14 @@
+version: "3"
+services:
+  liner-temperature-scraper:
+    build:
+      context: .
+    image: metrics-agent:latest
+    container_name: metrics-agent
+    working_dir: /app
+    restart: unless-stopped
+    command: [ "python", "src/main.py" ]
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - /etc/localtime:/etc/localtime:ro # sync timezone with host machine

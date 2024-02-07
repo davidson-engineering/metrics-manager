@@ -13,7 +13,6 @@ import threading
 import logging
 from typing import Union
 from dataclasses import dataclass
-import asyncio
 
 try:
     import tomllib
