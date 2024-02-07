@@ -14,7 +14,6 @@ COPY src /app/src
 COPY ./ ./app
 COPY ./pyproject.toml ./
 # RUN pip install .
-# COPY requirements.txt ./
 WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 

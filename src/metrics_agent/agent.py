@@ -13,6 +13,8 @@ import threading
 import logging
 from typing import Union
 from dataclasses import dataclass
+import yaml
+import json
 
 try:
     import tomllib
@@ -35,7 +37,55 @@ def load_toml(filepath):
         return tomllib.load(fp)
 
 
+def read_yaml_file(filepath):
+    with open(filepath, "r") as file:
+        return yaml.safe_load(file)
+
+
 config = load_toml("config/application.toml")
+
+TAGS_EXTRA_FILEPATH = "config/tags_extra.yaml"
+METRIC_FORMAT_FILEPATH = "config/metric_format.yaml"
+
+
+def expand_metric_dict(original_dict):
+
+    metrics_expanded = []
+
+    for field, value in original_dict["fields"].items():
+        new_dict = {
+            "measurement": original_dict["measurement"],
+            "fields": {field: value},
+            "tags": original_dict.get("tags", {}),
+            "time": original_dict.get("time", {}),
+        }
+        metrics_expanded.append(new_dict)
+
+    return metrics_expanded
+
+
+def expand_metrics(metrics):
+    expanded_metrics = []
+    for metric in metrics:
+        if isinstance(metric, str):
+            # Assume metric is JSON. Convert to dict
+            metric = json.loads(metric)
+        expanded_metric = expand_metric_dict(metric)
+        expanded_metrics.extend(expanded_metric)
+    return expanded_metrics
+
+
+# def create_mapping_dict(source_dict):
+
+#     # Initialize an empty mapping dictionary
+#     mapping_dict = {}
+
+#     # Iterate over the keys in the YAML file
+#     for key, value in source_dict.items():
+#         source_id = value.get("source_id", key)
+#         mapping_dict[source_id] = key
+
+#     return mapping_dict
 
 
 @dataclass
@@ -100,6 +150,8 @@ class MetricsAgent:
         self.update_interval = update_interval or config["agent"]["update_interval"]
         self.db_client = db_client
         self.post_processors = post_processors
+        self.measurement_format = read_yaml_file(METRIC_FORMAT_FILEPATH)
+        self.tags_extra = read_yaml_file(TAGS_EXTRA_FILEPATH)
 
         # Set up the server(s)
         # *************************************************************************
@@ -160,13 +212,12 @@ class MetricsAgent:
             self._send_buffer.add(next(self._input_buffer))
             self.session_stats.increment("metrics_processed")
 
-    def send_to_database(self):
+    def send_to_database(self, metrics_to_send):
         # Send the metrics in the send buffer to the database
-        processed_metrics = self._send_buffer.dump(maximum=self.batch_size_sending)
-        if processed_metrics:
-            self.db_client.send(processed_metrics)
-            logger.info(f"Sent {len(processed_metrics)} metrics to database")
-            self.session_stats.increment("metrics_sent", len(processed_metrics))
+        if metrics_to_send:
+            self.db_client.send(metrics_to_send)
+            logger.info(f"Sent {len(metrics_to_send)} metrics to database")
+            self.session_stats.increment("metrics_sent", len(metrics_to_send))
 
     # Thread management methods
     # *************************************************************************
@@ -207,9 +258,41 @@ class MetricsAgent:
 
             time.sleep(self.update_interval)  # Adjust sleep time as needed
 
+    def format_metrics(self, metrics_to_send):
+        tags_extra = read_yaml_file(TAGS_EXTRA_FILEPATH)
+        metric_formats = read_yaml_file(METRIC_FORMAT_FILEPATH)
+
+        metrics_to_send = expand_metrics(metrics_to_send)
+
+        for metric in metrics_to_send:
+            for k, v in metric["fields"].items():
+                try:
+                    metric_format = metric_formats[k]
+                except KeyError:
+                    # No format specified for key, continue
+                    continue
+                if metric_format["type"] == "float":
+                    metric["fields"][k] = float(metric["fields"][k])
+                elif metric_format["type"] == "str":
+                    metric["fields"][k] = str(metric["fields"][k])
+                else:
+                    raise ValueError("metric_format not specified")
+                try:
+                    metric["fields"] = {
+                        metric_format["db_fieldname"]: metric["fields"][k]
+                    }
+                except KeyError:
+                    # No database fieldname specified, use existing field name
+                    continue
+            metric["tags"] = metric["tags"] | metric_format["tags"] | tags_extra
+
+        return metrics_to_send
+
     def run_sending(self):
         while True:
-            self.send_to_database()
+            metrics_to_send = self._send_buffer.dump(maximum=self.batch_size_sending)
+            metrics_to_send = self.format_metrics(metrics_to_send)
+            self.send_to_database(metrics_to_send)
             time.sleep(self.update_interval)
 
     def stop_post_processing_thread(self):

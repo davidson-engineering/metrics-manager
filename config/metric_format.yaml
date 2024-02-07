@@ -1,0 +1,199 @@
+top_PID:
+  type: float
+  tags:
+    type_measure: setpoint
+    type_hardware: heater power
+    location: upper
+
+bot_PID:
+  type: float
+  tags:
+    type_measure: setpoint
+    type_hardware: heater power
+    location: upper
+
+top_batterylevel:
+  type: float
+  tags:
+    type_measure: percentage
+    type_hardware: battery
+    location: upper
+
+bot_batterylevel:
+  type: float
+  tags:
+    type_measure: percentage
+    type_hardware: battery
+    location: lower
+
+top_TC1:
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: thermocouple
+    location: upper, position 1
+
+top_TC2:
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: thermocouple
+    location: upper, position 2
+
+top_TC3:
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: thermocouple
+    location: upper, position 3
+
+bot_TC1:
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: thermocouple
+    location: lower, position 1  
+
+bot_TC2:
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: thermocouple
+    location: lower, position 2  
+
+bot_TC3:
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: thermocouple
+    location: lower, position 3  
+
+IR_ref:
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: thermocouple
+    location: internal to IR sensor
+
+IR_0:
+  db_fieldname: IR_array_temp0
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +0
+
+IR_1:
+  db_fieldname: IR_array_temp1
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +1  
+
+IR_2:
+  db_fieldname: IR_array_temp2
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +2
+
+IR_3:
+  db_fieldname: IR_array_temp3
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +3
+
+IR_4:
+  db_fieldname: IR_array_temp4
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +4
+
+IR_5:
+  db_fieldname: IR_array_temp5
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +5  
+
+IR_6:
+  db_fieldname: IR_array_temp6
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +6
+
+IR_7:
+  db_fieldname: IR_array_temp7
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +7
+
+top_setpoint:
+  type: float
+  tags:
+    type_measure: setpoint
+    location: upper
+
+bot_setpoint:
+  type: float
+  tags:
+    type_measure: setpoint
+    location: lower
+
+upper_pressure:
+  type: float
+  db_fieldname: upper_pressure_N2
+  tags:
+    type_measure: pressure
+    type_hardware: stinger
+    location: upper
+
+upper_pressure_voltage:
+  type: float
+  tags:
+    type_measure: pressure
+    type_hardware: stinger
+    location: upper
+  
+SD_card_status:
+  type: str
+  tags:
+    type_measure: status
+    type_hardware: SD card
+
+logging_status:
+  type: str
+  tags:
+    type_measure: status
+    type_hardware: SD card
+
+top_batwarning:
+  type: str
+  tags:
+    type_measure: status
+    type_hardware: battery
+
+bot_batwarning:
+  type: str
+  tags:
+    type_measure: status
+    type_hardware: battery
+
+gas:
+  type: str
+  db_fieldname: upper_pressure_gastype
+  tags:
+    type_measure: gas type
+    type_hardware: pressure gauge
+    location: upper
