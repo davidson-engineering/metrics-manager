@@ -75,21 +75,12 @@ def expand_metrics(metrics):
     return expanded_metrics
 
 
-# def create_mapping_dict(source_dict):
-
-#     # Initialize an empty mapping dictionary
-#     mapping_dict = {}
-
-#     # Iterate over the keys in the YAML file
-#     for key, value in source_dict.items():
-#         source_id = value.get("source_id", key)
-#         mapping_dict[source_id] = key
-
-#     return mapping_dict
-
-
 @dataclass
 class MetricsAgentStatistics(ApplicationMetrics):
+    name: str = "agent-statistics"
+    class_: str = "metrics_agent"
+    instance_id: int = 0
+    hostname: str = "gfyvrdatadash"
     metrics_received: int = 0
     metrics_sent: int = 0
     metrics_failed: int = 0

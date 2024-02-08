@@ -3,6 +3,7 @@ buffered @ git+https://github.com/davidson-engineering/buffered.git@v0.0.5
 fast-influxdb-client @ git+https://github.com/davidson-engineering/fast-influxdb-client.git@v1.1.3
 network-simple @ git+https://github.com/generalmattza/network-simple.git@v1.0.1
 custom_logging @ git+https://github.com/davidson-engineering/python-custom-logging.git@stable
+metrics-agent @ git+https://github.com/generalmattza/metrics-agent.git@v1.0.5
 certifi==2024.2.2
 exceptiongroup==1.2.0
 influxdb-client==1.40.0

@@ -7,8 +7,12 @@
 """Some demonstrative code for using the metrics agent"""
 # ---------------------------------------------------------------------------
 import logging
-from custom_logging import setup_logger, ColoredLogFormatter
 import os
+import asyncio
+
+from custom_logging import setup_logger, ColoredLogFormatter
+from metrics_agent import MetricsAgent
+from metrics_agent.db_client import InfluxDatabaseClient
 
 
 def setup_logging(client):
@@ -64,13 +68,12 @@ def setup_logging(client):
 
 
 def main():
-    import asyncio
-    from metrics_agent import MetricsAgent
-    from metrics_agent.db_client import InfluxDatabaseClient
 
     # Create a client for the agent to write data to a database
     db_client = InfluxDatabaseClient(
-        "config/influx.toml", local_tz="America/Vancouver", default_bucket="testing"
+        "config/influx.toml",
+        local_tz="America/Vancouver",
+        default_bucket="prototype-zero",
     )
     logger = setup_logging(db_client._client)
 
