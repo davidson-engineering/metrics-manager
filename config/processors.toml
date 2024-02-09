@@ -1,0 +1,8 @@
+[TimeLocalizer]
+local_tz = "America/Vancouver"
+
+[ExtraTags]
+extra_tags_filepath = "config/extra_tags.yaml"
+
+[Formatter]
+formats_filepath = "config/metric_format.yaml"
