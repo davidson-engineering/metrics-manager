@@ -109,7 +109,7 @@ def main():
     asyncio.run(node_client.request_data_periodically())
 
 
-def example_agent_with_server():
+def example_with_server():
 
     from metrics_agent import load_toml_file
 
@@ -117,8 +117,8 @@ def example_agent_with_server():
 
     # Create a client for the agent to write data to a database
     db_client = InfluxDatabaseClient(
-        agent="config/influx.toml",
-        default_bucket="prototype-zero",
+        config="config/influx_test.toml",
+        default_bucket="testing",
     )
     logger = setup_logging(db_client._client)
 
@@ -152,10 +152,13 @@ def example_agent_with_server():
     #     output_buffer=agent._input_buffer,
     #     server_address=server_address,
     # )
+    import time
+
+    while True:
+        time.sleep(1)
 
 
 def test():
-    import time
     from metrics_agent import load_toml_file
 
     config = load_toml_file("config/application.toml")
@@ -181,10 +184,13 @@ def test():
     for metric in test_metrics:
         agent.add_metric_to_queue(measurement="test_measurement", **metric)
 
+    import time
+
     while True:
         time.sleep(1)
 
 
 if __name__ == "__main__":
-    test()
+    # test()
+    example_with_server()
     # main()
