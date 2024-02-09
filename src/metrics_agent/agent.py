@@ -24,7 +24,7 @@ except ModuleNotFoundError:
 from buffered.buffer import Buffer
 from metrics_agent.db_client import DatabaseClient
 from application_metrics import SessionMetrics, ApplicationMetrics
-from metrics_agent.exceptions import DataFormatException, ConfigFileDoesNotExist
+from metrics_agent.exceptions import ConfigFileDoesNotExist
 
 logger = logging.getLogger(__name__)
 
