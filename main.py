@@ -7,20 +7,20 @@
 """Some demonstrative code for using the metrics agent"""
 # ---------------------------------------------------------------------------
 import logging
-<<<<<<< HEAD
-=======
 import logging.handlers
->>>>>>> d6c8bcd2802ca4c1738f17ce4e55c30a8cf0952c
 import os
 import asyncio
 
 from custom_logging import setup_logger, ColoredLogFormatter
 from metrics_agent import MetricsAgent
 from metrics_agent.db_client import InfluxDatabaseClient
-<<<<<<< HEAD
-=======
-from metrics_agent import JSONReader, Formatter, TimeLocalizer, ExpandFields
->>>>>>> d6c8bcd2802ca4c1738f17ce4e55c30a8cf0952c
+from metrics_agent import (
+    JSONReader,
+    Formatter,
+    TimeLocalizer,
+    ExpandFields,
+    TimePrecision,
+)
 
 
 def setup_logging(client):
@@ -32,12 +32,6 @@ def setup_logging(client):
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
 
-<<<<<<< HEAD
-    debug_file_handler = logging.FileHandler(filename=f"logs/{script_name}.debug.log")
-    debug_file_handler.setLevel(logging.DEBUG)
-
-    info_file_handler = logging.FileHandler(filename=f"logs/{script_name}.info.log")
-=======
     debug_file_handler = logging.handlers.TimedRotatingFileHandler(
         filename=f"logs/{script_name}.debug.log",
         when="midnight",
@@ -52,7 +46,6 @@ def setup_logging(client):
         interval=1,
         backupCount=7,
     )
->>>>>>> d6c8bcd2802ca4c1738f17ce4e55c30a8cf0952c
     info_file_handler.setLevel(logging.INFO)
 
     # set the log format for the handlers
@@ -68,18 +61,6 @@ def setup_logging(client):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
     )
-<<<<<<< HEAD
-    #info_file_handler.setFormatter(
-    #     logging.Formatter(
-    #         fmt="%(asctime)s,%(msecs)d - %(name)s - %(levelname)-8s - %(message)s",
-    #         datefmt="%Y-%m-%d %H:%M:%S",
-    #     )
-    # )
-
-    # Setup and assign logging handler to influxdb
-    #influx_logging_handler = client.get_logging_handler()
-    #influx_logging_handler.setLevel(logging.INFO)
-=======
     info_file_handler.setFormatter(
         logging.Formatter(
             fmt="%(asctime)s,%(msecs)d - %(name)s - %(levelname)-8s - %(message)s",
@@ -88,22 +69,16 @@ def setup_logging(client):
     )
 
     # Setup and assign logging handler to influxdb
-    # influx_logging_handler = client.get_logging_handler()
-    # influx_logging_handler.setLevel(logging.INFO)
->>>>>>> d6c8bcd2802ca4c1738f17ce4e55c30a8cf0952c
+    influx_logging_handler = client.get_logging_handler()
+    influx_logging_handler.setLevel(logging.INFO)
 
     # create the logger
     logger = setup_logger(
         handlers=[
             console_handler,
             debug_file_handler,
-<<<<<<< HEAD
-            #influx_logging_handler,
             info_file_handler,
-=======
-            info_file_handler,
-            # influx_logging_handler,
->>>>>>> d6c8bcd2802ca4c1738f17ce4e55c30a8cf0952c
+            influx_logging_handler,
         ]
     )
 
@@ -112,41 +87,42 @@ def setup_logging(client):
 
 def main():
 
-<<<<<<< HEAD
-    # Create a client for the agent to write data to a database
-    db_client = InfluxDatabaseClient(
-        "config/influx.toml", local_tz="America/Vancouver", default_bucket="prototype-zero"
-    )
-    logger = setup_logging(db_client._client)
-
-    # create the agent and assign it the client and desired aggregator, as well as the desired interval for updating the database
-    agent = MetricsAgent(
-        db_client=db_client,
-    )
-
-    asyncio.run(agent.node_client.request_data_periodically())
-
-
-if __name__ == "__main__":
-    main()
-=======
     from metrics_agent import NodeSwarmClient
     from metrics_agent import load_toml_file
+    from network_simple import SimpleServerTCP
 
     config = load_toml_file("config/application.toml")
 
     # Create a client for the agent to write data to a database
     db_client = InfluxDatabaseClient(
-        config="config/influx.toml",
-        default_bucket="prototype-zero",
+        config="config/influx_test.toml",
+        default_bucket="testing",
     )
     logger = setup_logging(db_client._client)
 
     # create the agent and assign it the client and desired processors
     agent = MetricsAgent(
         db_client=db_client,
-        processors=[JSONReader(), TimeLocalizer(), ExpandFields(), Formatter()],
+        processors=[
+            JSONReader(),
+            TimeLocalizer(),
+            TimePrecision(),
+            ExpandFields(),
+            Formatter(),
+        ],
         config=config["agent"],
+    )
+
+    # Start TCP Server
+
+    server_address = (
+        config["server"]["host"],
+        config["server"]["port"],
+    )
+
+    server_tcp = SimpleServerTCP(
+        output_buffer=agent._input_buffer,
+        server_address=server_address,
     )
 
     # Set up an Agent to retrieve data from the Arduino nodes
@@ -174,7 +150,13 @@ def example_with_server():
     # create the agent and assign it the client and desired processors
     agent = MetricsAgent(
         db_client=db_client,
-        processors=[JSONReader(), TimeLocalizer(), ExpandFields(), Formatter()],
+        processors=[
+            JSONReader(),
+            TimeLocalizer(),
+            TimePrecision(),
+            ExpandFields(),
+            Formatter(),
+        ],
         config=config["agent"],
     )
 
@@ -187,7 +169,7 @@ def example_with_server():
     )
 
     # Start TCP Server
-    from network_simple.server import SimpleServerTCP
+    from network_simple import SimpleServerTCP
 
     server_tcp = SimpleServerTCP(
         output_buffer=agent._input_buffer,
@@ -241,6 +223,5 @@ def test():
 
 if __name__ == "__main__":
     # test()
-    example_with_server()
-    # main()
->>>>>>> d6c8bcd2802ca4c1738f17ce4e55c30a8cf0952c
+    # example_with_server()
+    main()

@@ -15,7 +15,7 @@ update_interval = 60
 [server]
 buffer_length = 16384
 host = "gfyvrdatadash"
-port = 9999
+port = 50000
 
 [node_client]
 update_interval = 2

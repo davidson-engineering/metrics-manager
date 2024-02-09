@@ -31,7 +31,10 @@ dependencies = [
   "buffered @ git+https://github.com/davidson-engineering/buffered.git@v1.0.0",
   "network-simple @ git+https://github.com/generalmattza/network-simple.git@v1.0.2",
   "application-metrics @ git+https://github.com/generalmattza/application-metrics.git@v0.0.1",
+  "custom-logging @ git+https://github.com/davidson-engineering/python-custom-logging.git@v1.0.2",
 ]
+# [tool.setuptools]
+# packages = ["metrics_agent"]
 
 # If a module, then use fetch version from src/module_name/__init__.py
 [tool.setuptools.dynamic]

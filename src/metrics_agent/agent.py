@@ -167,9 +167,10 @@ class MetricsAgent:
             for processor in self.processors:
                 logger.debug(f"Processing metrics using {processor}")
                 metrics = processor.process(metrics)
+            number_metrics_processed = len(metrics)
             self._last_sent_time = time.time()
             self._send_buffer.put(metrics)
-            self.session_stats.increment("metrics_processed", len(metrics))
+            self.session_stats.increment("metrics_processed", number_metrics_processed)
 
     def passthrough(self):
         # If no post processors are defined, pass through the input buffer to the send buffer
@@ -180,9 +181,10 @@ class MetricsAgent:
     def send_to_database(self, metrics_to_send):
         # Send the metrics in the send buffer to the database
         if metrics_to_send:
+            number_metrics_sent = len(metrics_to_send)
             self.db_client.send(metrics_to_send)
-            logger.info(f"Sent {len(metrics_to_send)} metrics to database")
-            self.session_stats.increment("metrics_sent", len(metrics_to_send))
+            logger.info(f"Sent {number_metrics_sent} metrics to database")
+            self.session_stats.increment("metrics_sent", number_metrics_sent)
 
     # Thread management methods
     # *************************************************************************
@@ -207,7 +209,7 @@ class MetricsAgent:
 
     def update_session_stats(self):
         while True:
-            self.db_client.send([self.session_stats.build_metrics()])
+            self._input_buffer.put(self.session_stats.build_metrics())
             time.sleep(self.stats_update_interval)
 
     def run_processing(self):
@@ -222,7 +224,7 @@ class MetricsAgent:
     def run_sending(self):
         while True:
             # Dump metrics from buffer, and send to the database client
-            metrics_to_send = self._send_buffer.dump(maximum=self.batch_size_sending)
+            metrics_to_send = self._send_buffer.dump(max=self.batch_size_sending)
             self.send_to_database(metrics_to_send)
             time.sleep(self.update_interval)
 

@@ -3,13 +3,18 @@ services:
   metrics-agent:
     build:
       context: .
+    ports:
+      - "8888:8888/udp"
+      - "50000:50000/tcp"
     image: metrics-agent:latest
     container_name: metrics-agent
     working_dir: /app
     restart: unless-stopped
     command: [ "python", "main.py" ]
-    user: "1001"
+    # user: "1001"
     volumes:
       - ./logs:/app/logs
       - ./config:/app/config
       - /etc/localtime:/etc/localtime:ro # sync timezone with host machine
+
+    network_mode: "host"

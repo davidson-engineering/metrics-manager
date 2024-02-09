@@ -208,6 +208,14 @@ class TimeLocalizer(MetricsProcessor):
         return metrics
 
 
+class TimePrecision(MetricsProcessor):
+
+    def process_method(self, metrics):
+        for metric in metrics:
+            metric["time"] = int(metric["time"])
+        return metrics
+
+
 class ExpandFields(MetricsProcessor):
 
     def process_method(self, metrics):
@@ -254,10 +262,10 @@ class Formatter(MetricsProcessor):
                         f'No database fieldname specified for metric {metric["measurement"]}:{metric["fields"][k]}, use existing field name'
                     )
                     continue
-            try:
-                metric["tags"] = metric["tags"] | format["tags"]
-            except KeyError:
-                # No additonal tags have been specified for metric, continue
-                pass
+                try:
+                    metric["tags"] = metric["tags"] | format["tags"]
+                except KeyError:
+                    # No additonal tags have been specified for metric, continue
+                    pass
 
         return metrics
