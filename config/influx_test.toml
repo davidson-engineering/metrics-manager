@@ -5,5 +5,3 @@ org = "my_org"
 timeout = 6000
 connection_pool_maxsize = 25
 auth_basic = false
-# profilers="query, operator"
-# proxy = "http://proxy.domain.org:8080"

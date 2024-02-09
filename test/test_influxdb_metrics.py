@@ -52,7 +52,7 @@ def test_metrics_agent_simple(metrics_agent, random_dataset_1):
 
 
 def run_aggregator_test(agent, dataset):
-    from metrics_agent.post_processors import MetricsAggregatorStats
+    from metrics_agent.processors import MetricsAggregatorStats
     import time
 
     random_dataset_1_stats = []
