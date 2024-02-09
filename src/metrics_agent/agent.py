@@ -156,7 +156,7 @@ class MetricsAgent:
         self, measurement: str, fields: dict, time: int = None, **kwargs
     ):
         metric = dict(measurement=measurement, fields=fields, time=time, **kwargs)
-        self._input_buffer.add(metric)
+        self._input_buffer.put(metric)
         logger.debug(f"Added metric to buffer: {measurement}={fields}")
         self.session_stats.increment("metrics_received")
 
@@ -168,13 +168,13 @@ class MetricsAgent:
                 logger.debug(f"Processing metrics using {processor}")
                 metrics = processor.process(metrics)
             self._last_sent_time = time.time()
-            self._send_buffer.add(metrics)
+            self._send_buffer.put(metrics)
             self.session_stats.increment("metrics_processed", len(metrics))
 
     def passthrough(self):
         # If no post processors are defined, pass through the input buffer to the send buffer
         while self._input_buffer.not_empty():
-            self._send_buffer.add(next(self._input_buffer))
+            self._send_buffer.put(next(self._input_buffer))
             self.session_stats.increment("metrics_processed")
 
     def send_to_database(self, metrics_to_send):
@@ -249,7 +249,7 @@ class MetricsAgent:
             self._input_buffer.clear()
 
     def get_input_buffer_size(self):
-        return self._input_buffer.get_size()
+        return self._input_buffer.size()
 
     def run_until_buffer_empty(self):
         while self._input_buffer.not_empty():
