@@ -1,3 +1,9 @@
+<<<<<<< HEAD
 shot_id: "xxxxxx"
 shot_name: "PZero Shot 7"
 campaign: "Commissioning"
+=======
+shot_id = "xxxxxx"
+shot_name = "PZero Shot 7"
+campaign = "Commissioning"
+>>>>>>> d6c8bcd2802ca4c1738f17ce4e55c30a8cf0952c

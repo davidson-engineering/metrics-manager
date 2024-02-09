@@ -10,8 +10,6 @@ from abc import ABC, abstractmethod
 from typing import Union
 from dataclasses import asdict, is_dataclass, dataclass
 from fast_influxdb_client import FastInfluxDBClient
-from datetime import datetime
-import pytz
 import logging
 import json
 
@@ -26,24 +24,6 @@ def check_attributes(metric: dict, keys=("measurement", "fields", "time")) -> bo
     return True
 
 
-def localize_timestamp(timestamp, timezone_str="UTC") -> datetime:
-    """
-    Localize a timestamp to a timezone
-    :param timestamp: The timestamp to localize
-    :param timezone_str: The timezone to localize to
-    :return: The localized timestamp
-    """
-
-    if isinstance(timestamp, (int, float)):
-        dt_utc = datetime.fromtimestamp(timestamp)
-    elif isinstance(timestamp, datetime):
-        dt_utc = timestamp
-    else:
-        raise ValueError("timestamp must be a float, int, or datetime object")
-    timezone = pytz.timezone(timezone_str)
-    return int(timezone.localize(dt_utc).timestamp())
-
-
 class DatabaseClient(ABC):
     @abstractmethod
     def send(self, metrics): ...
@@ -53,14 +33,11 @@ class DatabaseClient(ABC):
 
 
 class InfluxDatabaseClient(DatabaseClient):
-    def __init__(
-        self, config, local_tz="UTC", write_precision="S", default_bucket="testing"
-    ):
+    def __init__(self, config, write_precision="S", default_bucket="testing"):
         self._client = FastInfluxDBClient.from_config_file(
             config, write_precision=write_precision
         )
         self._client.default_bucket = default_bucket
-        self.local_tz = local_tz
 
     def convert(self, metric: Union[tuple, dict, dataclass]) -> dict:
 
@@ -97,7 +74,7 @@ class InfluxDatabaseClient(DatabaseClient):
         if "tags" not in metric:
             metric["tags"] = {}
         assert check_attributes(metric, ensure_keys)
-        metric["time"] = localize_timestamp(metric["time"], self.local_tz)
+
         return metric
 
     def send(self, metrics: list[Union[tuple, dict, dataclass]]):

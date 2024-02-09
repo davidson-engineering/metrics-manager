@@ -68,8 +68,9 @@ bot_TC3:
     type_hardware: thermocouple
     location: lower, position 3  
 
-IR_ref:
+IR_Ref:
   type: float
+  db_fieldname: IR_ref
   tags:
     type_measure: temperature
     type_hardware: thermocouple

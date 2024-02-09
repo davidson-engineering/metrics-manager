@@ -161,3 +161,4 @@ cython_debug/
 .env
 .vscode
 .VSCodeCounter/
+config/influx_live.toml

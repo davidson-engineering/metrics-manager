@@ -10,9 +10,9 @@ ENV PYTHONUNBUFFERED=1
 # Update pip
 RUN python -m pip install --upgrade pip
 # Install package using pip
-COPY src /app/src
+# COPY src /app/src
 COPY ./ ./app
-COPY ./pyproject.toml ./
+# COPY ./pyproject.toml ./
 # RUN pip install .
 WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt

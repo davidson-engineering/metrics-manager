@@ -7,7 +7,7 @@ services:
     container_name: metrics-agent
     working_dir: /app
     restart: unless-stopped
-    command: [ "python", "src/main.py" ]
+    command: [ "python", "main.py" ]
     user: "1001"
     volumes:
       - ./logs:/app/logs
