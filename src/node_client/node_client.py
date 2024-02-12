@@ -4,7 +4,7 @@ from typing import Union
 from collections import deque
 from yaml import safe_load
 
-from metrics_agent.async_client import AsyncClient
+from node_client.async_client import AsyncClient
 
 NODE_FILEPATH = "config/nodes.yaml"
 NODE_COMMAND_FILEPATH = "config/node_commands.yaml"

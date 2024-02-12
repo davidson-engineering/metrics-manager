@@ -13,7 +13,7 @@ import asyncio
 
 from custom_logging import setup_logger, ColoredLogFormatter
 from metrics_agent import MetricsAgent
-from metrics_agent.db_client import InfluxDatabaseClient
+from fast_database_clients.fast_influxdb_client import FastInfluxDBClient
 from metrics_agent import (
     JSONReader,
     Formatter,
@@ -69,8 +69,8 @@ def setup_logging(client):
     )
 
     # Setup and assign logging handler to influxdb
-    influx_logging_handler = client.get_logging_handler()
-    influx_logging_handler.setLevel(logging.INFO)
+    # influx_logging_handler = client.get_logging_handler()
+    # influx_logging_handler.setLevel(logging.INFO)
 
     # create the logger
     logger = setup_logger(
@@ -78,7 +78,7 @@ def setup_logging(client):
             console_handler,
             debug_file_handler,
             info_file_handler,
-            influx_logging_handler,
+            # influx_logging_handler,
         ]
     )
 
@@ -87,22 +87,21 @@ def setup_logging(client):
 
 def main():
 
-    from metrics_agent import NodeSwarmClient
+    from node_client import NodeSwarmClient
     from metrics_agent import load_toml_file
     from network_simple import SimpleServerTCP
 
     config = load_toml_file("config/application.toml")
 
     # Create a client for the agent to write data to a database
-    db_client = InfluxDatabaseClient(
-        config="config/influx_test.toml",
-        default_bucket="testing",
+    database_client = FastInfluxDBClient.from_config_file(
+        config_file="config/influx_test.toml"
     )
-    logger = setup_logging(db_client._client)
+    logger = setup_logging(database_client)
 
     # create the agent and assign it the client and desired processors
     agent = MetricsAgent(
-        db_client=db_client,
+        database_client=database_client,
         processors=[
             JSONReader(),
             TimeLocalizer(),
@@ -131,6 +130,31 @@ def main():
         update_interval=config["node_client"]["update_interval"],
     )
 
+    # web_scraper = WebScraperClient(
+    #     buffer=agent._input_buffer,
+    #     config=config("webscraper")
+    # )
+
+    # # Asynchronously scrape data from a webpage
+    # # Webpage config defined in config/application.toml file
+    # # Scrape data from website
+    # # Package metric in dict
+    # # Place dict in buffer
+    # # self._buffer.put(metrics: list[dicts] or dict)
+
+    # metric = {
+    #     "measurement": "liner_heater",
+    #     "fields":{"IR_0": 22.3, "IR_1": 25, ...},
+    #     "time": datetime.now() or timestamp,
+    # }
+    # "config/webscraper.yaml:"
+    # {"id": timestamp1,
+    #  "id2": timestamp2}
+
+    # # format = load_config("format.yaml")
+    # # scraped_values = scrape(web_page)
+    # # [scraped_values.get(key, some_default) for key in format]
+
     asyncio.run(node_client.request_data_periodically())
 
 
@@ -141,15 +165,15 @@ def example_with_server():
     config = load_toml_file("config/application.toml")
 
     # Create a client for the agent to write data to a database
-    db_client = InfluxDatabaseClient(
+    database_client = FastInfluxDBClient(
         config="config/influx_test.toml",
         default_bucket="testing",
     )
-    logger = setup_logging(db_client._client)
+    logger = setup_logging(database_client._client)
 
     # create the agent and assign it the client and desired processors
     agent = MetricsAgent(
-        db_client=db_client,
+        database_client=database_client,
         processors=[
             JSONReader(),
             TimeLocalizer(),
@@ -195,15 +219,15 @@ def test():
     config = load_toml_file("config/application.toml")
 
     # Create a client for the agent to write data to a database
-    db_client = InfluxDatabaseClient(
+    database_client = FastInfluxDBClient(
         config="config/influx_test.toml",
         default_bucket="testing",
     )
-    logger = setup_logging(db_client._client)
+    logger = setup_logging(database_client._client)
 
     # # create the agent and assign it the client and desired aggregator, as well as the desired interval for updating the database
     agent = MetricsAgent(
-        db_client=db_client,
+        db_client=database_client,
         processors=[JSONReader(), TimeLocalizer(), ExpandFields(), Formatter()],
         config=config["agent"],
     )

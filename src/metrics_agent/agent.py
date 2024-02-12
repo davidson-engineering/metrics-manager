@@ -22,9 +22,12 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 from buffered.buffer import Buffer
-from metrics_agent.db_client import DatabaseClient
 from application_metrics import SessionMetrics, ApplicationMetrics
 from metrics_agent.exceptions import ConfigFileDoesNotExist
+
+# from typing import TYPE_CHECKING
+# if TYPE_CHECKING:
+#     from fast_database_clients.fast_influxdb_client import DatabaseClientBase
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +98,7 @@ class MetricsAgent:
 
     def __init__(
         self,
-        db_client: DatabaseClient,
+        database_client,
         processors: Union[list, tuple] = None,
         autostart: bool = True,
         update_interval: float = None,
@@ -125,8 +128,10 @@ class MetricsAgent:
 
         buffer_length = config.get("buffer_length", BUFFER_LENGTH)
 
-        config_db_client = config.get("db_client", {})
-        self.batch_size_sending = config_db_client.get("batch_size", BATCH_SIZE_SENDING)
+        config_database_client = config.get("db_client", {})
+        self.batch_size_sending = config_database_client.get(
+            "batch_size", BATCH_SIZE_SENDING
+        )
 
         config_processing = config.get("processing", {})
         self.batch_size_processing = config_processing.get(
@@ -139,7 +144,7 @@ class MetricsAgent:
 
         # Initialize the last sent time
         self._last_sent_time: float = time.time()
-        self.db_client = db_client
+        self.database_client = database_client
         self.processors = processors
 
         # Setup agent statistics for monitoring
@@ -182,7 +187,7 @@ class MetricsAgent:
         # Send the metrics in the send buffer to the database
         if metrics_to_send:
             number_metrics_sent = len(metrics_to_send)
-            self.db_client.send(metrics_to_send)
+            self.database_client.write(metrics_to_send)
             logger.info(f"Sent {number_metrics_sent} metrics to database")
             self.session_stats.increment("metrics_sent", number_metrics_sent)
 
@@ -281,23 +286,7 @@ class MetricsAgent:
 
 
 def main():
-    from metrics_agent.db_client import InfluxDatabaseClient
-
-    logging.basicConfig(level=logging.DEBUG)
-
-    db_client = InfluxDatabaseClient("config/influx.toml", local_tz="America/Vancouver")
-
-    # Example usage
-    metrics_agent = MetricsAgent(update_interval=1, db_client=db_client)
-
-    n = 10000
-    # Simulating metric collection
-    for _ in range(n):
-        metrics_agent.add_metric("queries", {"count": 10}, time.time())
-    while True:
-        # Wait for the agent to finish sending all metrics to the database before ending the program
-        metrics_agent.run_until_buffer_empty()
-        time.sleep(1)
+    pass
 
 
 if __name__ == "__main__":
