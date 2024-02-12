@@ -73,7 +73,7 @@ IR_Ref:
   db_fieldname: IR_ref
   tags:
     type_measure: temperature
-    type_hardware: thermocouple
+    type_hardware: infrared
     location: internal to IR sensor
 
 IR_0:
@@ -139,6 +139,78 @@ IR_7:
     type_measure: temperature
     type_hardware: infrared
     location: liner bottom +7
+
+IR2_Ref:
+  type: float
+  db_fieldname: IR2_ref
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: internal to IR sensor2
+
+IR2_0:
+  db_fieldname: IR2_array_temp0
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +0 (2)
+
+IR2_1:
+  db_fieldname: IR2_array_temp1
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +1 (2)  
+
+IR2_2:
+  db_fieldname: IR2_array_temp2
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +2 (2)
+
+IR2_3:
+  db_fieldname: IR2_array_temp3
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +3 (2)
+
+IR2_4:
+  db_fieldname: IR2_array_temp4
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +4 (2)
+
+IR2_5:
+  db_fieldname: IR2_array_temp5
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +5 (2)  
+
+IR2_6:
+  db_fieldname: IR2_array_temp6
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +6 (2)
+
+IR2_7:
+  db_fieldname: IR2_array_temp7
+  type: float
+  tags:
+    type_measure: temperature
+    type_hardware: infrared
+    location: liner bottom +7 (2)
 
 top_setpoint:
   type: float
