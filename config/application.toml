@@ -1,0 +1,26 @@
+[agent]
+update_interval = 1
+buffer_length = 16384
+
+[agent.processing]
+batch_size = 1000
+
+[agent.db_client]
+batch_size = 5000
+
+[agent.statistics]
+enabled = true
+update_interval = 60
+
+[server]
+buffer_length = 16384
+host = "gfyvrdatadash"
+port = 50001
+
+[node_client]
+update_interval = 2
+
+[webscraper]
+host = "10.0.0.0"
+port = 80
+update_interval = 1

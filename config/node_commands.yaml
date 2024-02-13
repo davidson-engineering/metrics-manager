@@ -1,0 +1,9 @@
+data-gatherer-arduino:
+  request_data: getData # returns data in JSON format
+  hello_world: "TestFunction"     # returns "hello world!"
+  get_time: "getTime"          # returns current system time
+  start_logging: "startLogging"     # enables logging
+  stop_logging: "stopLogging"      # disables logging
+  view_files: "viewFiles"          # returns all csv files on SD card
+  view_status: "viewStatus"       # returns SD Card and logging status
+  download_file: "download-20240205.csv" #QOL command. I wouldn't trust the data, but it lets me quickly skim the csv to see how big it is, and if the data makes sense.

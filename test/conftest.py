@@ -86,7 +86,7 @@ def random_dataset_1_timed():
 def metrics_agent():
     from metrics_agent import MetricsAgent
     from metrics_agent.db_client import InfluxDatabaseClient
-    from metrics_agent.post_processors import MetricsAggregatorStats
+    from metrics_agent.processors import MetricsAggregatorStats
 
     def metrics_agent_func(update_interval=1):
         db_client = InfluxDatabaseClient(
@@ -106,7 +106,7 @@ def metrics_agent():
 def metrics_agent_server():
     from metrics_agent import MetricsAgent
     from metrics_agent.db_client import InfluxDatabaseClient
-    from metrics_agent.post_processors import MetricsAggregatorStats
+    from metrics_agent.processors import MetricsAggregatorStats
 
     db_client = InfluxDatabaseClient(
         config=INFLUXDB_TESTING_CONFIG_FILEPATH, local_tz=LOCAL_TZ
@@ -118,3 +118,33 @@ def metrics_agent_server():
         server_tcp=True,
     )
     return metrics_agent
+
+
+import socket
+import threading
+
+
+def UDP_echo_server(host, port):
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_socket:
+        server_socket.bind((host, port))
+        print(f"Echo server is listening on {host}:{port}")
+
+        while True:
+            data, address = server_socket.recvfrom(1024)
+            print(f"Received data from {address}: {data.decode()}")
+
+            data = f"ECHO: {data.decode()}".encode()
+
+            server_socket.sendto(data, address)
+            print(f"Echoed back to {address}: {data.decode()}")
+
+
+@pytest.fixture
+def echo_server_in_thread():
+    def echo_server_in_thread_func(host, port):
+        server_thread = threading.Thread(target=UDP_echo_server, args=(host, port))
+        server_thread.daemon = True  # Daemonize the thread so it terminates when the main thread terminates
+        server_thread.start()
+        return server_thread
+
+    return echo_server_in_thread_func
