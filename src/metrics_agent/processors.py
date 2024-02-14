@@ -181,9 +181,9 @@ class AggregateStatistics(MetricsProcessor):
 
 class JSONReader(MetricsProcessor):
     def process_method(self, metrics):
-        for metric in metrics:
+        for i, metric in enumerate(metrics):
             if isinstance(metric, str):
-                metric = json.loads(metric)
+                metrics[i] = json.loads(metric)
         return metrics
 
 

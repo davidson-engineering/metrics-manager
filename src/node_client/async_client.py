@@ -61,7 +61,10 @@ class AsyncClient:
         on_con_lost = loop.create_future()
 
         def data_received_callback(data):
-            self._buffer.append(data)
+            try:
+                self._buffer.put(data)
+            except AttributeError:
+                self._buffer.append(data)
 
         transport, protocol = await loop.create_datagram_endpoint(
             lambda: EchoClientProtocol(message, on_con_lost, data_received_callback),
