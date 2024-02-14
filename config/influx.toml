@@ -1,7 +1,13 @@
 [influx2]
-url = "http://gfyvrdatadash:8086"
-token = "ewUzNRITtSXGqLh9Tw5Yk877oS6-rxtqDGbijXgdaLMafcjRgJb-hrgbjm3Rdva0EuGeObnoHnxtYOrRULOJNA=="
-org = "generalfusion"
-timeout = 10_000
+url = "http://localhost:8087"
+token = "super_secret_token"
+org = "my_org"
+timeout = 6000
 connection_pool_maxsize = 25
 auth_basic = false
+
+[database_client.influx]
+default_bucket = "testing"
+default_write_precision = "s"
+write_batch_size = 5_000
+local_tz = "America/Vancouver"

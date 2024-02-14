@@ -1,5 +1,5 @@
 [influx2]
-url = "http://gfyvrdatadash:8087"
+url = "http://localhost:8087"
 token = "super_secret_token"
 org = "my_org"
 timeout = 6000
@@ -9,5 +9,5 @@ auth_basic = false
 [database_client.influx]
 default_bucket = "testing"
 default_write_precision = "s"
-write_batch_size = 5000
+write_batch_size = 5_000
 local_tz = "America/Vancouver"

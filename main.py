@@ -88,10 +88,10 @@ def setup_logging(client):
 def main():
 
     from node_client import NodeSwarmClient
-    from metrics_agent import load_toml_file
+    from metrics_agent import load_config
     from network_simple import SimpleServerTCP
 
-    config = load_toml_file("config/application.toml")
+    config = load_config("config/application.toml")
 
     # Create a client for the agent to write data to a database
     database_client = FastInfluxDBClient.from_config_file(
