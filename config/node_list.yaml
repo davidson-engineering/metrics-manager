@@ -1,0 +1,8 @@
+node_0:
+  host: 10.0.0.142
+  port: 50000
+  name: pizero-2
+  bucket: data-nodes
+  priority: 0
+  extra_tags:
+  type: 'data-gatherer'

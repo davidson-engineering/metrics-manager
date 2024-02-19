@@ -17,10 +17,17 @@ buffer_length = 16384
 host = "gfyvrdatadash"
 port = 50001
 
-[node_client]
-update_interval = 2
-
 [webscraper]
 host = "10.0.0.0"
 port = 80
 update_interval = 1
+
+[node_network]
+read_limit = 1_000 # Security feature
+
+# [node_network.node_server]
+# prometheus_port = 8_000
+
+[node_network.node_client]
+prometheus_port = 8_000
+update_interval = 2

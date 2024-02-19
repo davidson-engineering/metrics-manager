@@ -1,0 +1,55 @@
+version: 1
+
+handlers:
+  console:
+    class : logging.StreamHandler
+    formatter: default
+    level   : INFO
+    stream  : ext://sys.stdout
+  main_debug_file:
+    class : logging.handlers.RotatingFileHandler
+    formatter: json
+    level   : DEBUG
+    filename: logs/main.debug.log
+    maxBytes: 1_000_000
+    backupCount: 3
+  main_info_file:
+    class : logging.handlers.RotatingFileHandler
+    formatter: json
+    level   : INFO
+    filename: logs/main.info.log
+    maxBytes: 1_000_000
+    backupCount: 3
+  node_client_file:
+    class : logging.handlers.RotatingFileHandler
+    formatter: json
+    level   : DEBUG
+    filename: logs/node_client.log
+    maxBytes: 1_000_000
+    backupCount: 3
+
+formatters:
+  brief:
+    format: '%(message)s'
+  default:
+    format: '%(asctime)s %(levelname)-8s %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  verbose:
+    format: "%(asctime)s,%(msecs)d - %(name)s - %(levelname)-8s - %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+  json:
+    class: pythonjsonlogger.jsonlogger.JsonFormatter
+    format: '%(asctime)s %(levelname)s %(message)s'
+
+loggers:
+  metrics_agent.agent:
+    level: DEBUG
+    handlers:
+      - console
+      - main_debug_file
+      - main_info_file
+  data_node_network.node_client:
+    level: DEBUG
+    handlers:
+      - console
+      - node_client_file
