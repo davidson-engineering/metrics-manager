@@ -1,7 +1,7 @@
 [project]
-name = "metrics-master"
+name = "metrics-manager"
 description = "A manager to collect, process and store metrics from a network of data nodes."
-dynamic = ["version"]
+version = "0.0.1"
 
 readme = "README.md"
 requires-python = ">=3.9"
@@ -34,15 +34,14 @@ dependencies = [
   "data-node-network @ git+https://github.com/davidson-engineering/data-node-network.git",
 ]
 
-# If a module, then use fetch version from src/module_name/__init__.py
-[tool.setuptools.dynamic]
-version = { attr = "metrics_agent.__version__" }
+[tool.setuptools]
+py-modules = []
 
 [project.optional-dependencies]
 test = ["pytest >= 8.0.0"]
 
 [project.urls]
 homepage = "https://davidson.engineering"
-repository = "https://github.com/davidson-engineering/metrics-agent"
+repository = "https://github.com/davidson-engineering/metrics-manager"
 # documentation = "https://readthedocs.org"
 # changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
