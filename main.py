@@ -56,10 +56,9 @@ def main():
     )
 
     # Create a client to gather data from the data nodes
-    node_list = [
-        Node(node) for node in node_config.values()
-    ]  # TODO put this in the NodeClientTCP class
-    node_client: NodeClientTCP = NodeClientTCP(node_list, buffer=processing_buffer)
+    node_client: NodeClientTCP = NodeClientTCP(
+        nodes=node_config, buffer=processing_buffer
+    )
 
     # Create a metrics processor for the data pipeline
     metrics_processor = MetricsProcessor(

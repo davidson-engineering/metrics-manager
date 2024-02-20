@@ -1,7 +1,7 @@
 [processor]
 update_interval = 1
-input_buffer_length = 65536
-output_buffer_length = 65536
+input_buffer_length = 65_536
+output_buffer_length = 65_536
 batch_size = 1000
 
 [processor.statistics]
@@ -9,15 +9,11 @@ enabled = true
 prometheus_port = 8_000
 update_interval = 60
 
-[agent.db_client]
+[database_client]
 batch_size = 5000
 
-[agent.statistics]
-enabled = true
-update_interval = 60
-
 [server]
-buffer_length = 16384
+input_buffer_length = 65_536
 host = "gfyvrdatadash"
 port = 50001
 
@@ -29,8 +25,8 @@ update_interval = 1
 [node_network]
 read_limit = 1_000 # Security feature
 
-# [node_network.node_server]
-# prometheus_port = 8_000
+[node_network.node_server]
+prometheus_port = 8_000
 
 [node_network.node_client]
 prometheus_port = 8_000
