@@ -5,16 +5,13 @@ output_buffer_length = 65_536
 batch_size = 1000
 
 [processor.statistics]
-enabled = true
+enable_prometheus_server = false
 prometheus_port = 8_000
 update_interval = 60
 
-[database_client]
-batch_size = 5000
-
 [server]
 input_buffer_length = 65_536
-host = "localhost"
+host = "gfyvrdatadash"
 port = 50001
 
 [webscraper]
@@ -26,8 +23,12 @@ update_interval = 1
 read_limit = 1_000 # Security feature
 
 [node_network.node_server]
+enable_prometheus_server = false
 prometheus_port = 8_000
+update_interval = 1
 
 [node_network.node_client]
+enable_prometheus_server = false
 prometheus_port = 8_000
-update_interval = 2
+update_interval = 1
+timeout = 5
