@@ -34,6 +34,8 @@ def setup_logging(filepath="config/logger.yaml"):
             config = yaml.load(stream, Loader=yaml.FullLoader)
     else:
         raise FileNotFoundError
+    with Path("logs/") as p:
+        p.mkdir(exist_ok=True)
     logger = dictConfig(config)
     return logger
 
@@ -42,8 +44,8 @@ def main():
 
     config = load_config("config/application.toml")
 
-    processing_buffer = Buffer(config["processor"]["input_buffer_size"])
-    database_buffer = Buffer(config["processor"]["output_buffer_size"])
+    processing_buffer = Buffer(maxlen=config["processor"]["input_buffer_length"])
+    database_buffer = Buffer(maxlen=config["processor"]["output_buffer_length"])
 
     # Create a TCP Server
     server_address = (
