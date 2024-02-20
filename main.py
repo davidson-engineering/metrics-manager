@@ -9,17 +9,20 @@
 from logging.config import dictConfig
 import asyncio
 
+from buffered import Buffer
 from data_node_network.node_client import Node, NodeClientTCP
 from data_node_network.configuration import node_config
-from metrics_agent import MetricsAgent
+from metrics_processor import MetricsProcessor
 from fast_database_clients.fast_influxdb_client import FastInfluxDBClient
-from metrics_agent import (
+from metrics_processor import (
     JSONReader,
     Formatter,
     TimeLocalizer,
     ExpandFields,
     TimePrecision,
 )
+from metrics_processor import load_config
+from network_simple import SimpleServerTCP
 
 
 def setup_logging(filepath="config/logger.yaml"):
@@ -34,53 +37,54 @@ def setup_logging(filepath="config/logger.yaml"):
     logger = dictConfig(config)
     return logger
 
-def main():
 
-    from metrics_agent import load_config
-    from network_simple import SimpleServerTCP
+def main():
 
     config = load_config("config/application.toml")
 
-    # Create a client for the agent to write data to a database
-    database_client = FastInfluxDBClient.from_config_file(
-        config_file="config/influx_test.toml"
-    )
-    logger = setup_logging(database_client)
+    processing_buffer = Buffer(config["processor"]["input_buffer_size"])
+    database_buffer = Buffer(config["processor"]["output_buffer_size"])
 
-    # create the agent and assign it the client and desired processors
-    agent = MetricsAgent(
-        database_client=database_client,
-        processors=[
+    # Create a TCP Server
+    server_address = (
+        config["server"]["host"],
+        config["server"]["port"],
+    )
+    manager_server_tcp = SimpleServerTCP(
+        output_buffer=processing_buffer,
+        server_address=server_address,
+    )
+
+    # Create a client to gather data from the data nodes
+    node_list = [
+        Node(node) for node in node_config.values()
+    ]  # TODO put this in the NodeClientTCP class
+    node_client: NodeClientTCP = NodeClientTCP(node_list, buffer=processing_buffer)
+
+    # Create a metrics processor for the data pipeline
+    metrics_processor = MetricsProcessor(
+        input_buffer=processing_buffer,
+        output_buffer=database_buffer,
+        pipelines=[
             JSONReader(),
             TimeLocalizer(),
             TimePrecision(),
             ExpandFields(),
             Formatter(),
         ],
-        config=config["agent"],
+        config=config["processor"],
     )
 
-    # Start TCP Server
-
-    server_address = (
-        config["server"]["host"],
-        config["server"]["port"],
+    # Create a client to write metrics to an InfluxDB database
+    database_client = FastInfluxDBClient.from_config_file(
+        input_buffer=database_buffer, config_file="config/influx_test.toml"
     )
 
-    server_tcp = SimpleServerTCP(
-        output_buffer=agent._input_buffer,
-        server_address=server_address,
-    )
-
-    # Create a client
-    node_list = [Node(node) for node in node_config.values()]
-    node_client: NodeClientTCP = NodeClientTCP(node_list, buffer=agent._input_buffer)
-    
+    # Start the node client last, as it will start the event loop and block
     node_client.start(interval=config["node_network"]["node_client"])
 
 
-
 if __name__ == "__main__":
-    
+
     setup_logging()
     main()

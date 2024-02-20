@@ -1,9 +1,13 @@
-[agent]
+[processor]
 update_interval = 1
-buffer_length = 16384
-
-[agent.processing]
+input_buffer_length = 65536
+output_buffer_length = 65536
 batch_size = 1000
+
+[processor.statistics]
+enabled = true
+prometheus_port = 8_000
+update_interval = 60
 
 [agent.db_client]
 batch_size = 5000

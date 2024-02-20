@@ -24,14 +24,14 @@ classifiers = [
 ]
 
 dependencies = [
-  # "pandas>=2.2.0",
-  # "pyarrow>=15.0.0",
-  # "tomli >= 1.1.0 ; python_version < '3.11'",
+  "pandas>=2.2.0",
+  "pyarrow>=15.0.0",
+  "tomli >= 1.1.0 ; python_version < '3.11'",
   "fast-database-clients @ git+https://github.com/davidson-engineering/fast-database-clients.git@v2.0.1",
-  "buffered @ git+https://github.com/davidson-engineering/buffered.git@v1.0.0",
-  "network-simple @ git+https://github.com/generalmattza/network-simple.git@v1.0.2",
-  "application-metrics @ git+https://github.com/generalmattza/application-metrics.git@v0.0.1",
+  "buffered @ git+https://github.com/davidson-engineering/buffered.git@v1.0.1",
+  "network-simple @ git+https://github.com/davidson-engineering/network-simple.git@v1.0.4",
   "data-node-network @ git+https://github.com/davidson-engineering/data-node-network.git",
+  "metrics-processor @ git+https://github.com/davidson-engineering/metrics-processor.git"
 ]
 
 [tool.setuptools]
