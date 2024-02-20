@@ -48,20 +48,30 @@ loggers:
       - console
       - metrics_manager.debug.file
       - metrics_manager.info.file
+
   metrics_processor.processor:
     level: DEBUG
     handlers:
       - console
       - metrics_manager.debug.file
       - metrics_manager.info.file
+
   metrics_processor.pipeline:
     level: DEBUG
     handlers:
       - console
       - metrics_manager.debug.file
       - metrics_manager.info.file
+
   data_node_network.node_client:
     level: DEBUG
     handlers:
       - console
       - node_network.node_client.debug.file
+  
+  fast_database_clients.fast_influxdb_client.influx_client:
+    level: DEBUG
+    handlers:
+      - console
+      - metrics_manager.debug.file
+      - metrics_manager.info.file

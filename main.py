@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Created By  : Matthew Davidson
-# Created Date: 2024-01-23
+# Created Date: 2024-02-20
 # ---------------------------------------------------------------------------
-"""Some demonstrative code for using the metrics agent"""
+"""An agent to manage a data pipeline.
+It facilitates the acquisition of data from a variety of sources, processes it
+and then store it in a database"""
 # ---------------------------------------------------------------------------
 from logging.config import dictConfig
 
@@ -74,7 +76,7 @@ def main():
             OutlierRemover,
             Renamer,
         ],
-        config=config["processor"],
+        config=config,
     )
 
     # Create a client to write metrics to an InfluxDB database

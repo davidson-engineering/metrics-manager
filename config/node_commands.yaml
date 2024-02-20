@@ -1,5 +1,5 @@
 data-gatherer-arduino:
-  request_data: getData # returns data in JSON format
+  get_data: getData # returns data in JSON format
   hello_world: "TestFunction"     # returns "hello world!"
   get_time: "getTime"          # returns current system time
   start_logging: "startLogging"     # enables logging
