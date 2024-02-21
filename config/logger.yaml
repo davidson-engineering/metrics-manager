@@ -6,25 +6,25 @@ handlers:
     formatter: default
     level   : INFO
     stream  : ext://sys.stdout
-  main_debug_file:
+  metrics_manager.debug.file:
     class : logging.handlers.RotatingFileHandler
     formatter: json
     level   : DEBUG
-    filename: logs/main.debug.log
+    filename: logs/metrics_manager.debug.log
     maxBytes: 1_000_000
     backupCount: 3
-  main_info_file:
+  metrics_manager.info.file:
     class : logging.handlers.RotatingFileHandler
     formatter: json
     level   : INFO
-    filename: logs/main.info.log
+    filename: logs/metrics_manager.info.log
     maxBytes: 1_000_000
     backupCount: 3
-  node_client_file:
+  node_network.node_client.debug.file:
     class : logging.handlers.RotatingFileHandler
     formatter: json
     level   : DEBUG
-    filename: logs/node_client.log
+    filename: logs/node_network.node_client.debug.log
     maxBytes: 1_000_000
     backupCount: 3
 
@@ -42,14 +42,36 @@ formatters:
     format: '%(asctime)s %(levelname)s %(message)s'
 
 loggers:
-  metrics_agent.agent:
+  metrics_manager:
     level: DEBUG
     handlers:
       - console
-      - main_debug_file
-      - main_info_file
+      - metrics_manager.debug.file
+      - metrics_manager.info.file
+
+  metrics_processor.processor:
+    level: DEBUG
+    handlers:
+      - console
+      - metrics_manager.debug.file
+      - metrics_manager.info.file
+
+  metrics_processor.pipeline:
+    level: DEBUG
+    handlers:
+      - console
+      - metrics_manager.debug.file
+      - metrics_manager.info.file
+
   data_node_network.node_client:
     level: DEBUG
     handlers:
       - console
-      - node_client_file
+      - node_network.node_client.debug.file
+  
+  fast_database_clients.fast_influxdb_client.influx_client:
+    level: DEBUG
+    handlers:
+      - console
+      - metrics_manager.debug.file
+      - metrics_manager.info.file

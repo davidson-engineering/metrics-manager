@@ -1,8 +1,14 @@
 [TimeLocalizer]
 local_tz = "America/Vancouver"
 
-[ExtraTags]
+[ExtraTagger]
 extra_tags_filepath = "config/extra_tags.yaml"
 
 [Formatter]
 formats_filepath = "config/metric_format.yaml"
+
+[OutlierRemover]
+boundaries_filepath = "config/metric_boundaries.yaml"
+
+[Renamer]
+name_mapping_filepath = "config/database_name_mapping.yaml"

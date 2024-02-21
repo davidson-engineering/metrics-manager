@@ -1,0 +1,135 @@
+upper_pressure:
+  min: 0
+  max: 1000
+
+upper_pressure_voltage:
+  min: 0
+  max: 10
+
+lower_pressure:
+  min: 0
+  max: 1000
+
+lower_pressure_voltage:
+  min: 0
+  max: 10
+
+top_PID:
+  min: 0
+  max: 255
+
+bot_PID:
+  min: 0
+  max: 255
+
+top_batterylevel:
+  min: 0
+  max: 100
+
+bot_batterylevel:
+  min: 0
+  max: 100
+
+top_TC1:
+  min: 0
+  max: 150
+
+top_TC2:
+  min: 0
+  max: 150
+
+top_TC3:
+  min: 0
+  max: 150
+
+bot_TC1:
+  min: 0
+  max: 150
+
+bot_TC2:
+  min: 0
+  max: 150
+
+bot_TC3:
+  min: 0
+  max: 150
+
+IR_Ref:
+  min: 0
+  max: 150
+
+IR_0:
+  min: 0
+  max: 150
+
+IR_1:
+  min: 0
+  max: 150
+
+IR_2:
+  min: 0
+  max: 150
+
+IR_3:
+  min: 0
+  max: 150
+
+IR_4:
+  min: 0
+  max: 150
+
+IR_5:
+  min: 0
+  max: 150
+
+IR_6:
+  min: 0
+  max: 150
+
+IR_7:
+  min: 0
+  max: 150
+
+IR2_Ref:
+  min: 0
+  max: 150
+
+IR2_0:
+  min: 0
+  max: 150
+
+IR2_1:
+  min: 0
+  max: 150 
+
+IR2_2:
+  min: 0
+  max: 150
+
+IR2_3:
+  min: 0
+  max: 150
+
+IR2_4:
+  min: 0
+  max: 150
+
+IR2_5:
+  min: 0
+  max: 150
+
+IR2_6:
+  min: 0
+  max: 150
+
+IR2_7:
+  min: 0
+  max: 150
+
+top_setpoint:
+  min: 0
+  max: 150
+
+bot_setpoint:
+  min: 0
+  max: 150

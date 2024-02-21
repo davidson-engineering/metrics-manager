@@ -2,24 +2,27 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Created By  : Matthew Davidson
-# Created Date: 2024-01-23
+# Created Date: 2024-02-20
 # ---------------------------------------------------------------------------
-"""Some demonstrative code for using the metrics agent"""
+"""An agent to manage a data pipeline.
+It facilitates the acquisition of data from a variety of sources, processes it
+and then store it in a database"""
 # ---------------------------------------------------------------------------
 from logging.config import dictConfig
-import asyncio
 
 from buffered import Buffer
-from data_node_network.node_client import Node, NodeClientTCP
+from data_node_network.node_client import NodeClientUDP
 from data_node_network.configuration import node_config
 from metrics_processor import MetricsProcessor
 from fast_database_clients.fast_influxdb_client import FastInfluxDBClient
-from metrics_processor import (
+from metrics_processor.pipeline import (
     JSONReader,
     Formatter,
     TimeLocalizer,
-    ExpandFields,
+    FieldExpander,
     TimePrecision,
+    OutlierRemover,
+    Renamer,
 )
 from metrics_processor import load_config
 from network_simple import SimpleServerTCP
@@ -58,31 +61,33 @@ def main():
     )
 
     # Create a client to gather data from the data nodes
-    node_client: NodeClientTCP = NodeClientTCP(
-        nodes=node_config, buffer=processing_buffer
-    )
+    node_client = NodeClientUDP(nodes=node_config, buffer=processing_buffer)
 
     # Create a metrics processor for the data pipeline
     metrics_processor = MetricsProcessor(
         input_buffer=processing_buffer,
         output_buffer=database_buffer,
         pipelines=[
-            JSONReader(),
-            TimeLocalizer(),
-            TimePrecision(),
-            ExpandFields(),
-            Formatter(),
+            JSONReader,
+            TimeLocalizer,
+            TimePrecision,
+            FieldExpander,
+            Formatter,
+            OutlierRemover,
+            Renamer,
         ],
-        config=config["processor"],
+        config=config,
     )
 
     # Create a client to write metrics to an InfluxDB database
     database_client = FastInfluxDBClient.from_config_file(
-        input_buffer=database_buffer, config_file="config/influx_test.toml"
+        buffer=database_buffer, config_file="config/influx_test.toml"
     )
+    # Start periodic writing to the database
+    database_client.start()
 
     # Start the node client last, as it will start the event loop and block
-    node_client.start(interval=config["node_network"]["node_client"])
+    node_client.start()
 
 
 if __name__ == "__main__":
