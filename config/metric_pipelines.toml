@@ -2,7 +2,10 @@
 local_tz = "America/Vancouver"
 
 [ExtraTagger]
-extra_tags_filepath = "config/extra_tags.yaml"
+shot_id = "xxxxxx"
+shot_name = "PZero Shot 7"
+campaign = "Commissioning"
+testbed = "PZero"
 
 [Formatter]
 formats_filepath = "config/metric_format.yaml"
@@ -10,5 +13,5 @@ formats_filepath = "config/metric_format.yaml"
 [OutlierRemover]
 boundaries_filepath = "config/metric_boundaries.yaml"
 
-[Renamer]
-name_mapping_filepath = "config/database_name_mapping.yaml"
+[PropertyMapper]
+property_mapping_filepath = "config/property_mapping.yaml"

@@ -16,13 +16,14 @@ from data_node_network.configuration import node_config
 from metrics_processor import MetricsProcessor
 from fast_database_clients.fast_influxdb_client import FastInfluxDBClient
 from metrics_processor.pipeline import (
+    FilterNone,
     JSONReader,
     Formatter,
     TimeLocalizer,
     FieldExpander,
     TimePrecision,
     OutlierRemover,
-    Renamer,
+    PropertyMapper,
 )
 from metrics_processor import load_config
 from network_simple import SimpleServerTCP
@@ -37,8 +38,7 @@ def setup_logging(filepath="config/logger.yaml"):
             config = yaml.load(stream, Loader=yaml.FullLoader)
     else:
         raise FileNotFoundError
-    with Path("logs/") as p:
-        p.mkdir(exist_ok=True)
+    Path("logs/").mkdir(exist_ok=True)
     logger = dictConfig(config)
     return logger
 
@@ -68,13 +68,14 @@ def main():
         input_buffer=processing_buffer,
         output_buffer=database_buffer,
         pipelines=[
+            FilterNone,
             JSONReader,
             TimeLocalizer,
             TimePrecision,
             FieldExpander,
             Formatter,
             OutlierRemover,
-            Renamer,
+            PropertyMapper,
         ],
         config=config,
     )

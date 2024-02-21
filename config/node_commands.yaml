@@ -1,5 +1,18 @@
+data-gatherer:
+  get_data: "get_data"
+  get_time: "get_time"
+  get_status: "get_status"
+  get_config: "get_config"
+  get_node_info: "get_node_info"
+  get_node_status: "get_node_status"
+  start_logging: "start_logging"
+  stop_logging: "stop_logging"
+  reset_node: "reset_node"
+  get_file: "get_file"
+  get_file_list: "get_file_list"
+
 data-gatherer-arduino:
-  get_data: getData # returns data in JSON format
+  request_data: getData # returns data in JSON format
   hello_world: "TestFunction"     # returns "hello world!"
   get_time: "getTime"          # returns current system time
   start_logging: "startLogging"     # enables logging
